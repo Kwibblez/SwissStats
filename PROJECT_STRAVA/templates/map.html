@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mes parcours {{ year }} — Strava Stats</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── NAVBAR ───────────────────────────────────── */
+    nav {
+      background: #1a1d27;
+      border-bottom: 1px solid #2d3148;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      z-index: 1000;
+    }
+    nav .logo {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #fc4c02;
+      letter-spacing: -0.5px;
+    }
+    nav .logo span { color: #e2e8f0; }
+    nav a {
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    nav a:hover, nav a.active { background: #2d3148; color: #e2e8f0; }
+    nav .spacer { flex: 1; }
+    nav .user-badge {
+      background: #fc4c02;
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 20px;
+    }
+
+    /* ── TOOLBAR ──────────────────────────────────── */
+    .toolbar {
+      background: #1a1d27;
+      border-bottom: 1px solid #2d3148;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .toolbar label { font-size: 0.85rem; color: #94a3b8; font-weight: 500; }
+    .toolbar select, .toolbar input[type=number] {
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      color: #e2e8f0;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+    .btn {
+      padding: 7px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: #fc4c02; color: white; }
+    .btn-primary:hover { background: #e04402; }
+    .btn-secondary { background: #2d3148; color: #e2e8f0; }
+    .btn-secondary:hover { background: #3d4168; }
+    .count-badge {
+      background: #2d3148;
+      color: #94a3b8;
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 12px;
+      margin-left: auto;
+    }
+    .count-badge strong { color: #fc4c02; }
+
+    /* ── MAIN LAYOUT ──────────────────────────────── */
+    .main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── MAP ──────────────────────────────────────── */
+    #map {
+      flex: 1;
+      background: #0f1117;
+    }
+
+    /* ── SIDEBAR ──────────────────────────────────── */
+    .sidebar {
+      width: 300px;
+      background: #1a1d27;
+      border-left: 1px solid #2d3148;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-header {
+      padding: 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #94a3b8;
+      border-bottom: 1px solid #2d3148;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .activity-list { flex: 1; }
+    .activity-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid #1e2235;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .activity-item:hover { background: #212438; }
+    .activity-item.selected { background: #2d3148; border-left: 3px solid #fc4c02; }
+    .activity-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .activity-meta {
+      display: flex;
+      gap: 10px;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+    .sport-tag {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    /* ── POPUP LEAFLET ────────────────────────────── */
+    .leaflet-popup-content-wrapper {
+      background: #1a1d27 !important;
+      color: #e2e8f0 !important;
+      border: 1px solid #2d3148 !important;
+      border-radius: 10px !important;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5) !important;
+    }
+    .leaflet-popup-tip { background: #1a1d27 !important; }
+    .popup-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 8px; color: #e2e8f0; }
+    .popup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .popup-stat { background: #212438; padding: 6px 10px; border-radius: 6px; }
+    .popup-stat .label { font-size: 0.68rem; color: #64748b; text-transform: uppercase; }
+    .popup-stat .val { font-size: 0.9rem; font-weight: 600; color: #e2e8f0; }
+    .popup-gpx {
+      display: block;
+      margin-top: 8px;
+      text-align: center;
+      background: #fc4c02;
+      color: white;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      width: 100%;
+    }
+
+    /* ── LOADER / PROGRESS ────────────────────────── */
+    .loader {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15,17,23,0.85);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .loader.active { display: flex; }
+    .loader-box {
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      border-radius: 16px;
+      padding: 32px 40px;
+      width: 360px;
+      text-align: center;
+    }
+    .loader-icon { font-size: 2rem; margin-bottom: 12px; }
+    .loader-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 6px;
+    }
+    .loader-text {
+      color: #64748b;
+      font-size: 0.8rem;
+      margin-bottom: 20px;
+      min-height: 1.2em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .progress-track {
+      background: #2d3148;
+      border-radius: 99px;
+      height: 8px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #fc4c02, #ff7043);
+      border-radius: 99px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .progress-pct {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fc4c02;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">⚡ Strava<span>Stats</span></div>
+  <a href="/map?year={{ year }}" class="active">🗺 Carte</a>
+  <a href="/stats?year={{ year }}">📊 Statistiques</a>
+  <div class="spacer"></div>
+  <div class="user-badge">{{ firstname }}</div>
+  <a href="/logout">Déconnexion</a>
+</nav>
+
+<div class="toolbar">
+  <label>Année :</label>
+  <input type="number" id="yearInput" value="{{ year }}" min="2010" max="2030" style="width:80px">
+
+  <label>Sport :</label>
+  <select id="sportFilter">
+    <option value="">Tous</option>
+    <option value="Run">🏃 Course</option>
+    <option value="Ride">🚴 Vélo</option>
+    <option value="Hike">🥾 Randonnée</option>
+    <option value="Swim">🏊 Natation</option>
+    <option value="Walk">🚶 Marche</option>
+    <option value="AlpineSki">⛷️ Ski alpin</option>
+    <option value="NordicSki">🎿 Ski nordique</option>
+    <option value="Rowing">🚣 Aviron</option>
+  </select>
+
+  <button class="btn btn-primary" onclick="loadTracks()">Charger</button>
+  <button class="btn btn-secondary" onclick="syncActivities()">🔄 Sync Strava</button>
+  <span class="count-badge" id="countBadge"><strong>0</strong> parcours</span>
+</div>
+
+<div class="main">
+  <div id="map"></div>
+  <div class="sidebar">
+    <div class="sidebar-header">Activités</div>
+    <div class="activity-list" id="activityList"></div>
+  </div>
+</div>
+
+<div class="loader" id="loader">
+  <div class="loader-box">
+    <div class="loader-icon" id="loaderIcon">⚡</div>
+    <div class="loader-title" id="loaderTitle">Chargement…</div>
+    <div class="loader-text" id="loaderText">Préparation...</div>
+    <div class="progress-track" id="progressTrack" style="display:none">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="progress-pct" id="progressPct"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── Couleurs par sport ───────────────────────────────────────
+const SPORT_COLORS = {
+  Run:       { color: '#fc4c02', emoji: '🏃' },
+  Ride:      { color: '#3b82f6', emoji: '🚴' },
+  Hike:      { color: '#22c55e', emoji: '🥾' },
+  Walk:      { color: '#a3e635', emoji: '🚶' },
+  Swim:      { color: '#06b6d4', emoji: '🏊' },
+  AlpineSki: { color: '#a78bfa', emoji: '⛷️' },
+  NordicSki: { color: '#c084fc', emoji: '🎿' },
+  Rowing:    { color: '#f59e0b', emoji: '🚣' },
+  default:   { color: '#94a3b8', emoji: '🏅' },
+};
+
+function getSportStyle(sport) {
+  return SPORT_COLORS[sport] || SPORT_COLORS.default;
+}
+
+// ── Carte Leaflet ────────────────────────────────────────────
+const map = L.map('map', { zoomControl: true }).setView([46.5, 8.0], 8);
+
+// Fond de carte sombre (CartoDB Dark Matter)
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap © CARTO',
+  maxZoom: 19,
+}).addTo(map);
+
+let trackLayer = L.layerGroup().addTo(map);
+let allFeatures = [];
+let selectedLayer = null;
+
+// ── Chargement des tracés ────────────────────────────────────
+async function loadTracks() {
+  const year  = document.getElementById('yearInput').value;
+  const sport = document.getElementById('sportFilter').value;
+  const url   = `/api/tracks?year=${year}${sport ? '&sport=' + sport : ''}`;
+
+  showLoader('Récupération des tracés…', '🗺 Carte', false);
+  trackLayer.clearLayers();
+  document.getElementById('activityList').innerHTML = '';
+  allFeatures = [];
+
+  try {
+    const resp = await fetch(url);
+    const data = await resp.json();
+    allFeatures = data.features || [];
+
+    document.getElementById('countBadge').innerHTML =
+      `<strong>${allFeatures.length}</strong> parcours`;
+
+    if (allFeatures.length === 0) {
+      hideLoader();
+      return;
+    }
+
+    const bounds = [];
+    const listEl = document.getElementById('activityList');
+
+    allFeatures.forEach((feature, idx) => {
+      const p     = feature.properties;
+      const style = getSportStyle(p.sport_type);
+      const coords = feature.geometry.coordinates.map(c => [c[1], c[0]]);
+
+      // Tracé sur la carte
+      const polyline = L.polyline(coords, {
+        color:   style.color,
+        weight:  2.5,
+        opacity: 0.75,
+      });
+
+      polyline.on('click', () => selectActivity(idx, polyline, p));
+      polyline.on('mouseover', function() {
+        this.setStyle({ weight: 4, opacity: 1 });
+      });
+      polyline.on('mouseout', function() {
+        if (selectedLayer !== this)
+          this.setStyle({ weight: 2.5, opacity: 0.75 });
+      });
+
+      polyline.bindPopup(buildPopup(p), { maxWidth: 260 });
+      trackLayer.addLayer(polyline);
+
+      coords.forEach(c => bounds.push(c));
+
+      // Élément dans la sidebar
+      const date = new Date(p.date).toLocaleDateString('fr-CH',
+        { day: '2-digit', month: 'short' });
+      const item = document.createElement('div');
+      item.className = 'activity-item';
+      item.id = `act-${idx}`;
+      item.innerHTML = `
+        <div>
+          <span class="sport-tag" style="background:${style.color}22;color:${style.color}">
+            ${style.emoji} ${p.sport_type}
+          </span>
+        </div>
+        <div class="activity-name">${p.name || 'Sans nom'}</div>
+        <div class="activity-meta">
+          <span>📅 ${date}</span>
+          <span>📏 ${p.distance_km} km</span>
+          ${p.elevation_m ? `<span>⬆️ ${p.elevation_m} m</span>` : ''}
+        </div>
+      `;
+      item.addEventListener('click', () => {
+        polyline.openPopup();
+        selectActivity(idx, polyline, p);
+        map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
+      });
+      listEl.appendChild(item);
+
+      feature._layer = polyline;
+      feature._item  = item;
+    });
+
+    if (bounds.length > 0) map.fitBounds(bounds, { padding: [20, 20] });
+
+  } catch (err) {
+    console.error(err);
+    alert('Erreur lors du chargement des tracés.');
+  }
+  hideLoader();
+}
+
+function selectActivity(idx, layer, props) {
+  // Désélectionne l'ancien
+  if (selectedLayer) selectedLayer.setStyle({ weight: 2.5, opacity: 0.75 });
+  document.querySelectorAll('.activity-item.selected')
+    .forEach(el => el.classList.remove('selected'));
+
+  selectedLayer = layer;
+  layer.setStyle({ weight: 5, opacity: 1 });
+  document.getElementById(`act-${idx}`)?.classList.add('selected');
+  document.getElementById(`act-${idx}`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function buildPopup(p) {
+  const dur = p.moving_time_s
+    ? `${Math.floor(p.moving_time_s/3600)}h${String(Math.floor((p.moving_time_s%3600)/60)).padStart(2,'0')}`
+    : '—';
+  const date = new Date(p.date).toLocaleDateString('fr-CH', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  return `
+    <div class="popup-title">${p.name || 'Activité sans nom'}</div>
+    <div style="font-size:0.75rem;color:#64748b;margin-bottom:8px">${date}</div>
+    <div class="popup-grid">
+      <div class="popup-stat"><div class="label">Distance</div><div class="val">${p.distance_km} km</div></div>
+      <div class="popup-stat"><div class="label">Durée</div><div class="val">${dur}</div></div>
+      ${p.elevation_m ? `<div class="popup-stat"><div class="label">Dénivelé</div><div class="val">${p.elevation_m} m</div></div>` : ''}
+      ${p.calories ? `<div class="popup-stat"><div class="label">Calories</div><div class="val">${p.calories} kcal</div></div>` : ''}
+      ${p.avg_speed ? `<div class="popup-stat"><div class="label">Vitesse moy.</div><div class="val">${p.avg_speed} km/h</div></div>` : ''}
+      ${p.heartrate ? `<div class="popup-stat"><div class="label">FC moy.</div><div class="val">${p.heartrate} bpm</div></div>` : ''}
+    </div>
+    <a class="popup-gpx" href="/api/gpx/${p.id}" download>⬇️ Exporter GPX</a>
+  `;
+}
+
+// ── Synchronisation Strava (SSE + progress bar) ─────────────
+function syncActivities() {
+  const year = document.getElementById('yearInput').value;
+
+  showLoader('Connexion à Strava…', '🔄 Synchronisation', false);
+
+  const evtSource = new EventSource(`/sync?year=${year}`);
+
+  evtSource.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+
+    document.getElementById('loaderText').textContent = data.msg || '';
+
+    if (data.total > 0) {
+      document.getElementById('progressTrack').style.display = 'block';
+      document.getElementById('progressBar').style.width = (data.pct || 0) + '%';
+      document.getElementById('progressPct').textContent =
+        `${data.done} / ${data.total} activités (${data.pct || 0}%)`;
+    }
+
+    if (data.finished) {
+      evtSource.close();
+      setTimeout(() => {
+        hideLoader();
+        loadTracks();
+      }, 800);
+    }
+  };
+
+  evtSource.onerror = () => {
+    evtSource.close();
+    hideLoader();
+    alert('Erreur lors de la synchronisation.');
+  };
+}
+
+function showLoader(msg, title = 'Chargement…', showBar = false) {
+  document.getElementById('loaderTitle').textContent = title;
+  document.getElementById('loaderText').textContent  = msg;
+  document.getElementById('progressTrack').style.display = showBar ? 'block' : 'none';
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('progressPct').textContent = '';
+  document.getElementById('loaderIcon').textContent  = showBar ? '🔄' : '⚡';
+  document.getElementById('loader').classList.add('active');
+}
+function hideLoader() {
+  document.getElementById('loader').classList.remove('active');
+}
+
+// Charge au démarrage
+loadTracks();
+</script>
+</body>
+</html>
