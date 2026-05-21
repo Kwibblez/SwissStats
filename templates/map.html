@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carte {{ year }} — VacheMètre</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body class="page-map">
+
+<nav>
+  <a href="/" class="logo">
+    <i class="ti ti-bolt"></i>Vache<span>Mètre</span>
+  </a>
+  <a href="/map?year={{ year }}" class="active"><i class="ti ti-map"></i> Carte</a>
+  <a href="/stats?year={{ year }}"><i class="ti ti-chart-bar"></i> Statistiques</a>
+  <div class="spacer"></div>
+  <span class="nav-badge">{{ firstname }}</span>
+  <a href="/logout" class="nav-btn">Déconnexion</a>
+</nav>
+
+<div class="toolbar">
+  <label>Année</label>
+  <input type="number" id="yearInput" value="{{ year }}" min="2010" max="2030" style="width:72px">
+  <label>Sport</label>
+  <select id="sportFilter">
+    <option value="">Tous</option>
+    <option value="Run">🏃 Course</option>
+    <option value="Ride">🚴 Vélo</option>
+    <option value="Hike">🥾 Randonnée</option>
+    <option value="Swim">🏊 Natation</option>
+    <option value="Walk">🚶 Marche</option>
+    <option value="AlpineSki">⛷️ Ski alpin</option>
+    <option value="NordicSki">🎿 Ski nordique</option>
+    <option value="Rowing">🚣 Aviron</option>
+  </select>
+  <button class="btn btn-orange" onclick="loadTracks()">
+    <i class="ti ti-refresh"></i> Charger
+  </button>
+  <button class="btn" onclick="syncActivities()">
+    <i class="ti ti-brand-strava"></i> Sync Strava
+  </button>
+  <span class="count-badge" id="countBadge"><b>0</b> parcours</span>
+</div>
+
+<div class="main">
+  <div id="map"></div>
+  <div class="sidebar">
+    <div class="sidebar-header">Activités</div>
+    <div id="activityList"></div>
+  </div>
+</div>
+
+<div class="loader" id="loader">
+  <div class="loader-box">
+    <div class="loader-icon" id="loaderIcon">⚡</div>
+    <div class="loader-title" id="loaderTitle">Chargement…</div>
+    <div class="loader-sub" id="loaderSub"></div>
+    <div class="prog-track" id="progTrack" style="display:none">
+      <div class="prog-bar" id="progBar"></div>
+    </div>
+    <div class="prog-label" id="progLabel"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+</body>
+</html>
