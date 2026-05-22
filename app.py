@@ -165,8 +165,13 @@ def sync_start():
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     for act in activities:
-                        name          = act.get("name", "Activité")
-                        calories      = act.get("calories") or 0
+                        name     = act.get("name", "Activité")
+                        calories = 0
+                        try:
+                            detail   = strava.get_activity_detail(act["id"])
+                            calories = detail.get("calories") or 0
+                        except Exception:
+                            calories = 0
                         track_geojson = None
                         has_gpx       = False
 
