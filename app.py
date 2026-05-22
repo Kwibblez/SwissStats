@@ -1,5 +1,5 @@
 """
-VacheMètre — Application Flask
+SwissStats — Application Flask
 HEIG-VD 2026 — Fardel, Perroud, Smith
 """
 
@@ -345,9 +345,9 @@ def api_stats():
     fun = {
         "vaches":         round(totals["total_m"] / 2.4),
         "lac_leman":      round(total_km / 170, 1),
-        "mont_blanc":     round(totals["total_elevation"] / 4808, 1),
+        "cervin":     round(totals["total_elevation"] / 4478 , 1),
         "lausanne_tokyo": round(total_km / 9600, 2),
-        "pizzas":         round(totals["total_calories"] / 800),
+        "fondues":         round(totals["total_calories"] / 800),
         "heures":         round(totals["total_seconds"] / 3600, 1),
     }
 

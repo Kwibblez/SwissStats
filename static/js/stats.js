@@ -4,11 +4,11 @@ const MONTHS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','N
 const COLORS = {
   Run: '#fc4c02', Ride: '#3b82f6', Hike: '#16a34a', Walk: '#84cc16',
   Swim: '#06b6d4', AlpineSki: '#8b5cf6', NordicSki: '#a855f7',
-  Rowing: '#f59e0b', default: '#6b7280',
+  TrailRun: '#f59e0b', default: '#6b7280',
 };
 const EMOJI = {
   Run: '🏃', Ride: '🚴', Hike: '🥾', Walk: '🚶', Swim: '🏊',
-  AlpineSki: '⛷️', NordicSki: '🎿', Rowing: '🚣', default: '🏅',
+  AlpineSki: '⛷️', NordicSki: '🎿', TrailRun: '⛰️', default: '🏅',
 };
 const fmt = (n) => n == null ? '—' : Number(n).toLocaleString('fr-CH');
 
@@ -56,8 +56,8 @@ function render(data) {
       <div class="fun-grid">
         <div class="fun-card"><div class="fun-icon">🐄</div><div><div class="fun-num">${fmt(fun.vaches)}</div><div class="fun-lbl">vaches bout à bout</div><div class="fun-desc">Une vache ≈ 2.4 m</div></div></div>
         <div class="fun-card"><div class="fun-icon">🌊</div><div><div class="fun-num">${fun.lac_leman}×</div><div class="fun-lbl">le tour du lac Léman</div><div class="fun-desc">170 km de tour complet</div></div></div>
-        <div class="fun-card"><div class="fun-icon">🏔️</div><div><div class="fun-num">${fun.mont_blanc}×</div><div class="fun-lbl">l'altitude du Mont Blanc</div><div class="fun-desc">${fmt(Math.round(t.total_elevation))} m de dénivelé</div></div></div>
-        <div class="fun-card"><div class="fun-icon">🍕</div><div><div class="fun-num">${fmt(fun.pizzas)}</div><div class="fun-lbl">pizzas brûlées</div><div class="fun-desc">≈ 800 kcal par pizza</div></div></div>
+        <div class="fun-card"><div class="fun-icon">🏔️</div><div><div class="fun-num">${fun.cervin}×</div><div class="fun-lbl">l'altitude du Cervin</div><div class="fun-desc">${fmt(Math.round(t.total_elevation))} m de dénivelé</div></div></div>
+        <div class="fun-card"><div class="fun-icon">🫕</div><div><div class="fun-num">${fmt(fun.fondues)}</div><div class="fun-lbl">fondues brûlées</div><div class="fun-desc">≈ 800 kcal par pizza</div></div></div>
         <div class="fun-card"><div class="fun-icon">✈️</div><div><div class="fun-num">${fun.lausanne_tokyo}×</div><div class="fun-lbl">Lausanne → Tokyo</div><div class="fun-desc">9 600 km à vol d'oiseau</div></div></div>
         <div class="fun-card"><div class="fun-icon">⏰</div><div><div class="fun-num">${fun.heures}h</div><div class="fun-lbl">de sport au total</div><div class="fun-desc">Soit ${(fun.heures / 24).toFixed(1)} jours complets</div></div></div>
       </div>

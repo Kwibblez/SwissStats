@@ -8,7 +8,7 @@ const SPORTS = {
   Swim:      { color: '#06b6d4', emoji: '🏊' },
   AlpineSki: { color: '#8b5cf6', emoji: '⛷️' },
   NordicSki: { color: '#a855f7', emoji: '🎿' },
-  Rowing:    { color: '#f59e0b', emoji: '🚣' },
+  TrailRun:    { color: '#f59e0b', emoji: '⛰️' },
   default:   { color: '#6b7280', emoji: '🏅' },
 };
 const sp = (s) => SPORTS[s] || SPORTS.default;
