@@ -207,6 +207,7 @@ def sync_activities():
                     saved += 1
                     pct = round((saved / total) * 100) if total else 100
                     yield "data: " + json.dumps({'total': total, 'done': saved, 'pct': pct, 'msg': name}) + "\n\n"
+                    time.sleep(0.5)  # évite le rate limit Strava (100 req/15min)
 
                 conn.commit()
 

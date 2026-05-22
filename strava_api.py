@@ -1,5 +1,6 @@
 """
 strava_api.py — Wrapper pour l'API Strava v3
+Gère le rate limiting (100 req/15min) automatiquement.
 """
 
 import time
@@ -24,7 +25,6 @@ class StravaAPI:
     # ── OAuth ────────────────────────────────────────────────
 
     def exchange_code(self, code, redirect_uri):
-        """Échange le code OAuth contre des tokens."""
         resp = requests.post("https://www.strava.com/oauth/token", data={
             "client_id":     self.client_id,
             "client_secret": self.client_secret,
@@ -36,10 +36,8 @@ class StravaAPI:
         return resp.json()
 
     def refresh_if_needed(self):
-        """Rafraîchit l'access token s'il expire dans moins de 60s."""
         if time.time() < self.expires_at - 60:
-            return None   # encore valide
-
+            return None
         resp = requests.post("https://www.strava.com/oauth/token", data={
             "client_id":     self.client_id,
             "client_secret": self.client_secret,
@@ -53,23 +51,26 @@ class StravaAPI:
         self.expires_at    = data["expires_at"]
         return data
 
-    def _get(self, endpoint, params=None):
-        """Requête GET authentifiée."""
+    def _get(self, endpoint, params=None, _retry=3):
+        """Requête GET avec gestion automatique du rate limit (429)."""
         self.refresh_if_needed()
         headers = {"Authorization": f"Bearer {self.access_token}"}
         resp = requests.get(f"{self.BASE_URL}{endpoint}",
                             headers=headers, params=params)
+
+        # Rate limit atteint → attend et réessaie
+        if resp.status_code == 429 and _retry > 0:
+            wait = int(resp.headers.get("X-RateLimit-Reset", 60))
+            # Attend au max 60s pour ne pas bloquer trop longtemps
+            time.sleep(min(wait, 60))
+            return self._get(endpoint, params, _retry - 1)
+
         resp.raise_for_status()
         return resp.json()
 
     # ── Activités ────────────────────────────────────────────
 
     def get_activities_for_year(self, year: int):
-        """
-        Retourne toutes les activités d'une année donnée (pagination auto).
-        Strava filtre par timestamp Unix (after/before).
-        """
-        import calendar
         after  = int(time.mktime((year,  1,  1, 0, 0, 0, 0, 0, 0)))
         before = int(time.mktime((year, 12, 31, 23, 59, 59, 0, 0, 0)))
 
@@ -92,47 +93,21 @@ class StravaAPI:
         return activities
 
     def get_activity_detail(self, activity_id: int):
-        """Détail complet d'une activité (inclut les segments, etc.)."""
         return self._get(f"/activities/{activity_id}")
 
-    # ── Streams GPS ──────────────────────────────────────────
-
     def get_latlng_stream(self, activity_id: int):
-        """
-        Retourne la liste de [lat, lng] du parcours GPS.
-        Retourne None si l'activité n'a pas de GPS.
-        """
         try:
             data = self._get(f"/activities/{activity_id}/streams", params={
-                "keys":           "latlng",
-                "key_by_type":    "true",
+                "keys":        "latlng",
+                "key_by_type": "true",
             })
             if "latlng" in data:
-                return data["latlng"]["data"]   # [[lat, lng], ...]
+                return data["latlng"]["data"]
         except requests.HTTPError as e:
-            if e.response.status_code == 404:
+            if e.response.status_code in (404, 403):
                 return None
             raise
         return None
 
-    def get_full_streams(self, activity_id: int):
-        """
-        Retourne tous les streams utiles :
-        latlng, altitude, heartrate, cadence, velocity_smooth, time
-        """
-        keys = "latlng,altitude,heartrate,cadence,velocity_smooth,time"
-        try:
-            return self._get(f"/activities/{activity_id}/streams", params={
-                "keys":        keys,
-                "key_by_type": "true",
-            })
-        except requests.HTTPError:
-            return {}
-
-    # ── Athlète ──────────────────────────────────────────────
-
     def get_athlete(self):
         return self._get("/athlete")
-
-    def get_athlete_stats(self, athlete_id: int):
-        return self._get(f"/athletes/{athlete_id}/stats")
