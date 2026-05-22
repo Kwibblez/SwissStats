@@ -4,6 +4,8 @@ HEIG-VD 2026 — Fardel, Perroud, Smith
 """
 
 import os
+import time
+import json
 from flask import Flask, redirect, request, session, url_for, render_template, jsonify
 from dotenv import load_dotenv
 import psycopg2
