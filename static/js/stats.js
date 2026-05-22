@@ -42,12 +42,12 @@ function render(data) {
     <div class="section">
       <div class="section-title">Résumé ${data.year}</div>
       <div class="totals-grid">
-        <div class="stat-card"><div class="icon">🏅</div><div class="val">${fmt(t.nb_activities)}</div><div class="unit">activités</div></div>
-        <div class="stat-card"><div class="icon">📏</div><div class="val">${fmt(km)}</div><div class="unit">km parcourus</div></div>
-        <div class="stat-card"><div class="icon">⏱</div><div class="val">${h}h${String(min).padStart(2,'0')}</div><div class="unit">en mouvement</div></div>
-        <div class="stat-card"><div class="icon">⬆️</div><div class="val">${fmt(Math.round(t.total_elevation))}</div><div class="unit">m dénivelé</div></div>
-        <div class="stat-card"><div class="icon">🔥</div><div class="val">${fmt(Math.round(t.total_calories))}</div><div class="unit">kcal brûlées</div></div>
-        ${t.avg_heartrate ? `<div class="stat-card"><div class="icon">❤️</div><div class="val">${Math.round(t.avg_heartrate)}</div><div class="unit">bpm moyen</div></div>` : ''}
+        <div class="stat-card"><div class="val">${fmt(t.nb_activities)}</div><div class="unit">activités</div></div>
+        <div class="stat-card"><div class="val">${fmt(km)}</div><div class="unit">km parcourus</div></div>
+        <div class="stat-card"><div class="val">${h}h${String(min).padStart(2,'0')}</div><div class="unit">en mouvement</div></div>
+        <div class="stat-card"<div class="val">${fmt(Math.round(t.total_elevation))}</div><div class="unit">m dénivelé</div></div>
+        <div class="stat-card"><<div class="val">${fmt(Math.round(t.total_calories))}</div><div class="unit">kcal brûlées</div></div>
+        ${t.avg_heartrate ? `<div class="stat-card"><div class="val">${Math.round(t.avg_heartrate)}</div><div class="unit">bpm moyen</div></div>` : ''}
       </div>
     </div>
 
@@ -57,7 +57,7 @@ function render(data) {
         <div class="fun-card"><div class="fun-icon">🐄</div><div><div class="fun-num">${fmt(fun.vaches)}</div><div class="fun-lbl">vaches bout à bout</div><div class="fun-desc">Une vache ≈ 2.4 m</div></div></div>
         <div class="fun-card"><div class="fun-icon">🌊</div><div><div class="fun-num">${fun.lac_leman}×</div><div class="fun-lbl">le tour du lac Léman</div><div class="fun-desc">170 km de tour complet</div></div></div>
         <div class="fun-card"><div class="fun-icon">🏔️</div><div><div class="fun-num">${fun.cervin}×</div><div class="fun-lbl">l'altitude du Cervin</div><div class="fun-desc">${fmt(Math.round(t.total_elevation))} m de dénivelé</div></div></div>
-        <div class="fun-card"><div class="fun-icon">🫕</div><div><div class="fun-num">${fmt(fun.fondues)}</div><div class="fun-lbl">fondues brûlées</div><div class="fun-desc">≈ 800 kcal par pizza</div></div></div>
+        <div class="fun-card"><div class="fun-icon">🫕</div><div><div class="fun-num">${fmt(fun.fondues)}</div><div class="fun-lbl">fondues brûlées</div><div class="fun-desc">≈ 800 kcal par fondue</div></div></div>
         <div class="fun-card"><div class="fun-icon">✈️</div><div><div class="fun-num">${fun.lausanne_tokyo}×</div><div class="fun-lbl">Lausanne → Tokyo</div><div class="fun-desc">9 600 km à vol d'oiseau</div></div></div>
         <div class="fun-card"><div class="fun-icon">⏰</div><div><div class="fun-num">${fun.heures}h</div><div class="fun-lbl">de sport au total</div><div class="fun-desc">Soit ${(fun.heures / 24).toFixed(1)} jours complets</div></div></div>
       </div>

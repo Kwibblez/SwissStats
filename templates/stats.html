@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Statistiques {{ year }} — VacheMètre</title>
+  <title>Statistiques {{ year }} — SwissStats</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
@@ -31,5 +31,12 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/stats.js') }}"></script>
+<footer>
+    <a href="https://heig-vd.ch/">
+      <img src="/figures/HEIG-VD.png" alt="HEIG logo" class ="logo">
+    </a>
+    <p class="login-footer">HEIG-VD 2026 — Fardel, Perroud, Smith</p>
+
+</footer>
 </body>
 </html>

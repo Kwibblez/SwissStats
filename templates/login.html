@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VacheMètre</title>
+  <title>SwissStats</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
@@ -16,10 +16,10 @@
       <p class="login-sub">Visualisez vos activités Strava et découvrez combien de vaches vous avez parcourues cette année.</p>
 
       <div class="features">
-        <div class="feat">🗺️ Tous vos parcours sur une carte</div>
-        <div class="feat">🐄 Stats Suisses : vaches, fondue, lac Léman…</div>
-        <div class="feat">⬇️ Export GPX de chaque activité</div>
-        <div class="feat">📊 Graphiques mensuels et par sport</div>
+        <div class="feat">Tous vos parcours sur une carte</div>
+        <div class="feat">Stats Suisses : vaches, fondue, lac Léman…</div>
+        <div class="feat">Export GPX de chaque activité</div>
+        <div class="feat">Graphiques mensuels et par sport</div>
       </div>
 
       <a href="/login" class="strava-btn">
@@ -29,8 +29,18 @@
         Connecter mon compte Strava
       </a>
 
-      <p class="login-footer">HEIG-VD 2026 — Fardel, Perroud, Smith</p>
+
     </div>
   </div>
+  <footer>
+      <a href="https://heig-vd.ch/">
+        <img src="/figures/HEIG-VD.png" alt="HEIG logo" class ="logo">
+      </a>
+      <p class="login-footer">HEIG-VD 2026 — Fardel, Perroud, Smith</p>
+
+  </footer>
 </body>
+
+
+
 </html>
