@@ -5,20 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Statistiques {{ year }} — VacheMètre</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
 <nav>
-  <a href="/" class="logo"><i class="ti ti-bolt"></i>Vache<span>Mètre</span></a>
-  <a href="/map?year={{ year }}"><i class="ti ti-map"></i> Carte</a>
-  <a href="/stats?year={{ year }}" class="active"><i class="ti ti-chart-bar"></i> Statistiques</a>
+  <a href="/" class="logo">🐄 Vache<span>Mètre</span></a>
+  <a href="/map?year={{ year }}">🗺 Carte</a>
+  <a href="/stats?year={{ year }}" class="active">📊 Statistiques</a>
   <div class="spacer"></div>
   <span class="nav-badge">{{ firstname }}</span>
-  <a href="/logout" class="nav-btn">Déconnexion</a>
+  <button class="nav-btn" onclick="window.location='/logout'">Déconnexion</button>
 </nav>
 
 <div class="year-bar">

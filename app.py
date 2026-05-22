@@ -363,14 +363,14 @@ def api_stats():
     # 1 vache suisse = 2.4m de long en moyenne
     VACHE_LONGUEUR_M = 2.4
     # Distance Lausanne-Tokyo = 9 600 km
-    # Cervin = 4478 m
+    # Mont Blanc = 4808m
     # Tour du Lac Léman = 170 km
     fun = {
         "vaches":         round(totals["total_m"] / VACHE_LONGUEUR_M),
         "lac_leman":      round(total_km / 170, 1),
-        "cervin":     round(totals["total_elevation"] / 4478, 1),
+        "mont_blanc":     round(totals["total_elevation"] / 4808, 1),
         "lausanne_tokyo": round(total_km / 9600, 2),
-        "fondue":         round(totals["total_calories"] / 800),   # ~800 kcal/pizza
+        "pizzas":         round(totals["total_calories"] / 800),   # ~800 kcal/pizza
         "heures":         round(totals["total_seconds"] / 3600, 1),
     }
 
