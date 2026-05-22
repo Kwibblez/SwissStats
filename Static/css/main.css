@@ -118,7 +118,7 @@ input:focus, select:focus {
   border-color: var(--orange);
 }
 
-/* ── Layout carte ────────────────────────── */
+/* ── Layout carte ────────────────────── */
 body.page-map {
   height: 100vh;
   display: flex;
