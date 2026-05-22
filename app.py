@@ -13,6 +13,29 @@ from db import get_db_connection, init_db
 
 load_dotenv()
 
+def _decode_polyline(polyline_str):
+    """Décode un Google Encoded Polyline en liste de [lng, lat]."""
+    coords = []
+    index, lat, lng = 0, 0, 0
+    while index < len(polyline_str):
+        for is_lng in [False, True]:
+            shift, result = 0, 0
+            while True:
+                b = ord(polyline_str[index]) - 63
+                index += 1
+                result |= (b & 0x1f) << shift
+                shift += 5
+                if b < 0x20:
+                    break
+            value = ~(result >> 1) if result & 1 else result >> 1
+            if is_lng:
+                lng += value
+                coords.append([lng / 1e5, lat / 1e5])
+            else:
+                lat += value
+    return coords
+
+
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change_me_in_prod")
 
@@ -147,19 +170,15 @@ def sync_activities():
                 for i, act in enumerate(activities):
                     name = act.get("name", "Activité")
 
-                    try:
-                        detail   = strava.get_activity_detail(act["id"])
-                        calories = detail.get("calories") or 0
-                    except Exception:
-                        calories = 0
-
-                    latlng_stream = strava.get_latlng_stream(act["id"])
+                    # Utilise summary_polyline de la liste (0 appel API extra)
+                    calories      = act.get("calories") or 0
                     track_geojson = None
                     has_gpx       = False
 
-                    if latlng_stream and len(latlng_stream) > 1:
-                        has_gpx       = True
-                        coords        = [[pt[1], pt[0]] for pt in latlng_stream]
+                    polyline_str = (act.get("map") or {}).get("summary_polyline", "")
+                    if polyline_str:
+                        has_gpx = True
+                        coords  = _decode_polyline(polyline_str)
                         track_geojson = json.dumps({"type": "LineString", "coordinates": coords})
 
                     start_ll = act.get("start_latlng") or [None, None]
