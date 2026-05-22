@@ -114,24 +114,44 @@ function buildPopup(p) {
     <a class="pop-gpx" href="/api/gpx/${p.id}" download>⬇ Exporter GPX</a>`;
 }
 
-function syncActivities() {
+async function syncActivities() {
   const year = document.getElementById('yearInput').value;
   showLoader('Connexion à Strava…', '🔄');
-  const src = new EventSource(`/sync?year=${year}`);
-  src.onmessage = (e) => {
-    const d = JSON.parse(e.data);
-    document.getElementById('loaderSub').textContent = d.msg || '';
-    if (d.total > 0) {
-      document.getElementById('progTrack').style.display = 'block';
-      document.getElementById('progBar').style.width     = (d.pct || 0) + '%';
-      document.getElementById('progLabel').textContent   = `${d.done} / ${d.total} activités`;
+
+  // Lance le job en arrière-plan
+  const res = await fetch(`/sync?year=${year}`);
+  const { job_id } = await res.json();
+
+  // Poll la progression toutes les secondes
+  const interval = setInterval(async () => {
+    try {
+      const r   = await fetch(`/sync/status?job_id=${job_id}`);
+      const d   = await r.json();
+
+      document.getElementById('loaderSub').textContent = d.msg || '';
+
+      if (d.total > 0) {
+        document.getElementById('progTrack').style.display = 'block';
+        document.getElementById('progBar').style.width     = (d.pct || 0) + '%';
+        document.getElementById('progLabel').textContent   = `${d.done} / ${d.total} activités`;
+      }
+
+      if (d.error) {
+        clearInterval(interval);
+        hideLoader();
+        alert('Erreur : ' + d.error);
+      }
+
+      if (d.finished) {
+        clearInterval(interval);
+        setTimeout(() => { hideLoader(); loadTracks(); }, 800);
+      }
+    } catch {
+      clearInterval(interval);
+      hideLoader();
+      alert('Erreur de synchronisation.');
     }
-    if (d.finished) {
-      src.close();
-      setTimeout(() => { hideLoader(); loadTracks(); }, 600);
-    }
-  };
-  src.onerror = () => { src.close(); hideLoader(); alert('Erreur de synchronisation.'); };
+  }, 1000);
 }
 
 function showLoader(msg, icon = '⚡') {

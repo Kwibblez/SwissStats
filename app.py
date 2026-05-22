@@ -128,120 +128,118 @@ def logout():
 # SYNCHRONISATION DES ACTIVITÉS STRAVA
 # ═══════════════════════════════════════════════════════════════
 
-@app.route("/sync")
-def sync_activities():
-    """Stream SSE de progression — envoie un événement par activité traitée."""
-    if "user_id" not in session:
-        return redirect(url_for("login"))
+# Stockage de la progression en mémoire
+SYNC_JOBS = {}
 
+@app.route("/sync")
+def sync_start():
+    """Lance la sync dans un thread background et retourne immédiatement."""
+    if "user_id" not in session:
+        return jsonify({"error": "non connecté"}), 401
+
+    import threading, uuid
     year    = request.args.get("year", 2024, type=int)
     user_id = session["user_id"]
+    job_id  = str(uuid.uuid4())[:8]
 
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
-            user = cur.fetchone()
+    SYNC_JOBS[job_id] = {"done": 0, "total": 0, "pct": 0,
+                         "msg": "Démarrage…", "finished": False, "error": None}
 
-    strava = StravaAPI(STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET)
-    strava.set_tokens(user["access_token"], user["refresh_token"],
-                      user["token_expires_at"])
+    def run():
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                    cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+                    user = cur.fetchone()
 
-    new_tokens = strava.refresh_if_needed()
-    if new_tokens:
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    UPDATE users SET access_token=%s, refresh_token=%s,
-                    token_expires_at=%s WHERE id=%s
-                """, (new_tokens["access_token"], new_tokens["refresh_token"],
-                      new_tokens["expires_at"], user_id))
-                conn.commit()
+            strava = StravaAPI(STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET)
+            strava.set_tokens(user["access_token"], user["refresh_token"],
+                              user["token_expires_at"])
+            strava.refresh_if_needed()
 
-    from flask import Response, stream_with_context
-    import json
+            activities = strava.get_activities_for_year(year)
+            total = len(activities)
+            SYNC_JOBS[job_id].update({"total": total, "msg": f"{total} activités trouvées"})
 
-    def generate():
-        activities = strava.get_activities_for_year(year)
-        total      = len(activities)
+            saved = 0
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    for act in activities:
+                        name          = act.get("name", "Activité")
+                        calories      = act.get("calories") or 0
+                        track_geojson = None
+                        has_gpx       = False
 
-        yield f"data: " + json.dumps({'total': total, 'done': 0, 'msg': f'Récupération de {total} activités...'}) + "\n\n"
+                        polyline_str = (act.get("map") or {}).get("summary_polyline", "")
+                        if polyline_str:
+                            has_gpx       = True
+                            coords        = _decode_polyline(polyline_str)
+                            track_geojson = json.dumps({"type": "LineString", "coordinates": coords})
 
-        saved = 0
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                for i, act in enumerate(activities):
-                    name = act.get("name", "Activité")
+                        start_ll = act.get("start_latlng") or [None, None]
+                        end_ll   = act.get("end_latlng")   or [None, None]
+                        if len(start_ll) < 2: start_ll = [None, None]
+                        if len(end_ll)   < 2: end_ll   = [None, None]
 
-                    # Utilise summary_polyline de la liste (0 appel API extra)
-                    calories      = act.get("calories") or 0
-                    track_geojson = None
-                    has_gpx       = False
+                        cur.execute("""
+                            INSERT INTO activities (
+                                strava_id, user_id, name, sport_type,
+                                start_date, start_date_local, timezone,
+                                distance_m, moving_time_s, elapsed_time_s,
+                                total_elevation_m, calories,
+                                average_speed_ms, max_speed_ms,
+                                average_heartrate, max_heartrate,
+                                average_cadence, average_watts, suffer_score,
+                                start_lat, start_lng, end_lat, end_lng,
+                                track_geojson, has_gpx, manual, commute
+                            ) VALUES (
+                                %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                                %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
+                            )
+                            ON CONFLICT (strava_id) DO UPDATE SET
+                                track_geojson = EXCLUDED.track_geojson,
+                                has_gpx       = EXCLUDED.has_gpx,
+                                calories      = EXCLUDED.calories
+                        """, (
+                            act["id"], user_id,
+                            act.get("name"), act.get("sport_type"),
+                            act.get("start_date"), act.get("start_date_local"),
+                            act.get("timezone"),
+                            act.get("distance"), act.get("moving_time"),
+                            act.get("elapsed_time"), act.get("total_elevation_gain"),
+                            calories,
+                            act.get("average_speed"), act.get("max_speed"),
+                            act.get("average_heartrate"), act.get("max_heartrate"),
+                            act.get("average_cadence"), act.get("average_watts"),
+                            act.get("suffer_score"),
+                            start_ll[0], start_ll[1],
+                            end_ll[0],   end_ll[1],
+                            track_geojson, has_gpx,
+                            act.get("manual", False), act.get("commute", False),
+                        ))
+                        saved += 1
+                        pct = round((saved / total) * 100) if total else 100
+                        SYNC_JOBS[job_id].update({"done": saved, "pct": pct, "msg": name})
 
-                    polyline_str = (act.get("map") or {}).get("summary_polyline", "")
-                    if polyline_str:
-                        has_gpx = True
-                        coords  = _decode_polyline(polyline_str)
-                        track_geojson = json.dumps({"type": "LineString", "coordinates": coords})
+                    conn.commit()
 
-                    start_ll = act.get("start_latlng") or [None, None]
-                    end_ll   = act.get("end_latlng")   or [None, None]
-                    if len(start_ll) < 2: start_ll = [None, None]
-                    if len(end_ll)   < 2: end_ll   = [None, None]
+            SYNC_JOBS[job_id].update({"pct": 100, "finished": True,
+                                      "msg": f"✅ {saved} activités synchronisées !"})
+        except Exception as e:
+            SYNC_JOBS[job_id].update({"finished": True, "error": str(e)})
 
-                    cur.execute("""
-                        INSERT INTO activities (
-                            strava_id, user_id, name, sport_type,
-                            start_date, start_date_local, timezone,
-                            distance_m, moving_time_s, elapsed_time_s,
-                            total_elevation_m, calories,
-                            average_speed_ms, max_speed_ms,
-                            average_heartrate, max_heartrate,
-                            average_cadence, average_watts, suffer_score,
-                            start_lat, start_lng, end_lat, end_lng,
-                            track_geojson, has_gpx, manual, commute
-                        ) VALUES (
-                            %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
-                            %s,%s,%s,%s,%s,%s,%s,%s,%s,
-                            %s,%s,%s,%s
-                        )
-                        ON CONFLICT (strava_id) DO UPDATE SET
-                            track_geojson = EXCLUDED.track_geojson,
-                            has_gpx       = EXCLUDED.has_gpx,
-                            calories      = EXCLUDED.calories
-                    """, (
-                        act["id"], user_id,
-                        act.get("name"), act.get("sport_type"),
-                        act.get("start_date"), act.get("start_date_local"),
-                        act.get("timezone"),
-                        act.get("distance"), act.get("moving_time"),
-                        act.get("elapsed_time"), act.get("total_elevation_gain"),
-                        calories,
-                        act.get("average_speed"), act.get("max_speed"),
-                        act.get("average_heartrate"), act.get("max_heartrate"),
-                        act.get("average_cadence"), act.get("average_watts"),
-                        act.get("suffer_score"),
-                        start_ll[0], start_ll[1],
-                        end_ll[0],   end_ll[1],
-                        track_geojson, has_gpx,
-                        act.get("manual", False), act.get("commute", False),
-                    ))
-                    saved += 1
-                    pct = round((saved / total) * 100) if total else 100
-                    yield "data: " + json.dumps({'total': total, 'done': saved, 'pct': pct, 'msg': name}) + "\n\n"
-                    time.sleep(0.5)  # évite le rate limit Strava (100 req/15min)
-
-                conn.commit()
-
-        yield "data: " + json.dumps({'total': total, 'done': saved, 'pct': 100, 'finished': True, 'msg': f'✅ {saved} activités synchronisées !'}) + "\n\n"
-
-    return Response(stream_with_context(generate()),
-                    mimetype="text/event-stream",
-                    headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+    threading.Thread(target=run, daemon=True).start()
+    return jsonify({"job_id": job_id})
 
 
-# ═══════════════════════════════════════════════════════════════
-# CARTE (page principale)
-# ═══════════════════════════════════════════════════════════════
+@app.route("/sync/status")
+def sync_status():
+    """Retourne la progression du job en cours."""
+    job_id = request.args.get("job_id")
+    if not job_id or job_id not in SYNC_JOBS:
+        return jsonify({"error": "job inconnu"}), 404
+    return jsonify(SYNC_JOBS[job_id])
+
 
 @app.route("/map")
 def map_view():
