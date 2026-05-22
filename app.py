@@ -154,13 +154,13 @@ def sync_activities():
                         calories = 0
 
                     latlng_stream = strava.get_latlng_stream(act["id"])
-                    track_geom    = None
+                    track_geojson = None
                     has_gpx       = False
 
                     if latlng_stream and len(latlng_stream) > 1:
-                        has_gpx    = True
-                        wkt_pts    = ", ".join(f"{pt[1]} {pt[0]}" for pt in latlng_stream)
-                        track_geom = f"LINESTRING({wkt_pts})"
+                        has_gpx       = True
+                        coords        = [[pt[1], pt[0]] for pt in latlng_stream]
+                        track_geojson = json.dumps({"type": "LineString", "coordinates": coords})
 
                     start_ll = act.get("start_latlng") or [None, None]
                     end_ll   = act.get("end_latlng")   or [None, None]
@@ -177,17 +177,16 @@ def sync_activities():
                             average_heartrate, max_heartrate,
                             average_cadence, average_watts, suffer_score,
                             start_lat, start_lng, end_lat, end_lng,
-                            track_geom, has_gpx, manual, commute
+                            track_geojson, has_gpx, manual, commute
                         ) VALUES (
                             %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
                             %s,%s,%s,%s,%s,%s,%s,%s,%s,
-                            ST_GeomFromText(%s, 4326),
-                            %s,%s,%s
+                            %s,%s,%s,%s
                         )
                         ON CONFLICT (strava_id) DO UPDATE SET
-                            track_geom = EXCLUDED.track_geom,
-                            has_gpx    = EXCLUDED.has_gpx,
-                            calories   = EXCLUDED.calories
+                            track_geojson = EXCLUDED.track_geojson,
+                            has_gpx       = EXCLUDED.has_gpx,
+                            calories      = EXCLUDED.calories
                     """, (
                         act["id"], user_id,
                         act.get("name"), act.get("sport_type"),
@@ -202,7 +201,7 @@ def sync_activities():
                         act.get("suffer_score"),
                         start_ll[0], start_ll[1],
                         end_ll[0],   end_ll[1],
-                        track_geom, has_gpx,
+                        track_geojson, has_gpx,
                         act.get("manual", False), act.get("commute", False),
                     ))
                     saved += 1
@@ -251,11 +250,11 @@ def api_tracks():
             ROUND(calories::numeric)                       AS calories,
             ROUND((average_speed_ms * 3.6)::numeric, 1)   AS avg_speed_kmh,
             average_heartrate,
-            ST_AsGeoJSON(track_geom)::json          AS geojson
+            track_geojson
         FROM activities
         WHERE user_id = %s
           AND EXTRACT(YEAR FROM start_date_local) = %s
-          AND track_geom IS NOT NULL
+          AND track_geojson IS NOT NULL
     """
     params = [session["user_id"], year]
 
@@ -272,7 +271,7 @@ def api_tracks():
     for row in rows:
         features.append({
             "type": "Feature",
-            "geometry": row["geojson"],
+            "geometry": json.loads(row["track_geojson"]),
             "properties": {
                 "id":            row["strava_id"],
                 "name":          row["name"],
@@ -397,16 +396,16 @@ def export_gpx(strava_id):
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute("""
                 SELECT a.name, a.start_date_local, a.sport_type,
-                       ST_AsGeoJSON(a.track_geom)::json AS geojson
+                       a.track_geojson
                 FROM activities a
                 WHERE a.strava_id = %s AND a.user_id = %s
             """, (strava_id, session["user_id"]))
             act = cur.fetchone()
 
-    if not act or not act["geojson"]:
+    if not act or not act["track_geojson"]:
         return "Activité introuvable ou sans tracé", 404
 
-    coords = act["geojson"]["coordinates"]  # [[lng, lat], ...]
+    coords = json.loads(act["track_geojson"])["coordinates"]  # [[lng, lat], ...]
     trkpts = "\n".join(
         f'      <trkpt lat="{lat}" lon="{lng}"></trkpt>'
         for lng, lat in coords
