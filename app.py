@@ -346,7 +346,7 @@ def api_stats():
         "vaches":         round(totals["total_m"] / 2.4),
         "lac_leman":      round(total_km / 170, 1),
         "cervin":     round(totals["total_elevation"] / 4478 , 1),
-        "lausanne_tokyo": round(total_km / 9600, 2),
+        "swissTotal": (round(total_km / 66 000, 2))*100,
         "fondues":         round(totals["total_calories"] / 800),
         "heures":         round(totals["total_seconds"] / 3600, 1),
     }
