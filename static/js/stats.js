@@ -6,10 +6,14 @@ const COLORS = {
   Swim: '#06b6d4', AlpineSki: '#8b5cf6', NordicSki: '#a855f7',
   TrailRun: '#f59e0b', default: '#6b7280',
 };
+
+
 const EMOJI = {
   Run: '🏃', Ride: '🚴', Hike: '🥾', Walk: '🚶', Swim: '🏊',
   AlpineSki: '⛷️', NordicSki: '🎿', TrailRun: '⛰️', default: '🏅',
 };
+
+
 const fmt = (n) => n == null ? '—' : Number(n).toLocaleString('fr-CH');
 
 let cMonth = null, cSport = null;
@@ -27,7 +31,7 @@ async function loadStats() {
     const res = await fetch(`/api/stats?year=${year}`);
     render(await res.json());
   } catch {
-    document.getElementById('content').innerHTML = '<div class="empty">❌ Erreur de chargement.</div>';
+    document.getElementById('content').innerHTML = '<div class="empty">Erreur de chargement.</div>';
   }
 }
 
@@ -58,7 +62,7 @@ function render(data) {
         <div class="fun-card"><div class="fun-icon">🌊</div><div><div class="fun-num">${fun.lac_leman}×</div><div class="fun-lbl">le tour du lac Léman</div><div class="fun-desc">170 km de tour complet</div></div></div>
         <div class="fun-card"><div class="fun-icon"><img src="static/figures/cervin.ico"></div><div><div class="fun-num">${fun.cervin}×</div><div class="fun-lbl">l'altitude du Cervin</div><div class="fun-desc">${fmt(Math.round(t.total_elevation))} m de dénivelé en total</div></div></div>
         <div class="fun-card"><div class="fun-icon">🫕</div><div><div class="fun-num">${fmt(fun.fondues)}</div><div class="fun-lbl">fondues brûlées</div><div class="fun-desc">≈ 800 kcal par fondue</div></div></div>
-        <div class="fun-card"><div class="fun-icon"><a href="https://www.flaticon.com/free-icons/switzerland"</a></div><div><div class="fun-num">${fun.swissTotal}%</div><div class="fun-lbl"> de la Suisse parcourue</div><div class="fun-desc">Bien joué !</div></div></div>
+        <div class="fun-card"><div class="fun-icon"><img src="static/figures/country.ico"></div><div><div class="fun-num">${fun.swissTotal}%</div><div class="fun-lbl"> de la Suisse parcourue</div><div class="fun-desc">Bien joué !</div></div></div>
         <div class="fun-card"><div class="fun-icon">⏰</div><div><div class="fun-num">${fun.heures}h</div><div class="fun-lbl">de sport au total</div><div class="fun-desc">Soit ${(fun.heures / 24).toFixed(1)} jours complets</div></div></div>
       </div>
     </div>
