@@ -29,12 +29,10 @@ STRAVA_SCOPES        = "read,activity:read_all"
 
 SYNC_JOBS = {}
 
-
 app.config.update(
     SESSION_COOKIE_SAMESITE="None",
     SESSION_COOKIE_SECURE=True
 )
-
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
@@ -61,6 +59,10 @@ def _decode_polyline(polyline_str):
                 lat += value
     return coords
 
+
+# ═══════════════════════════════════════════════════════════════
+# OAUTH STRAVA
+# ═══════════════════════════════════════════════════════════════
 
 @app.route("/")
 def index():
@@ -131,6 +133,10 @@ def logout():
     return redirect(url_for("index"))
 
 
+# ═══════════════════════════════════════════════════════════════
+# SYNC STRAVA — thread background + polling
+# ═══════════════════════════════════════════════════════════════
+
 @app.route("/sync")
 def sync_start():
     if "user_id" not in session:
@@ -161,6 +167,15 @@ def sync_start():
             total = len(activities)
             SYNC_JOBS[job_id].update({"total": total, "msg": f"{total} activites trouvees..."})
 
+            # Récupère les strava_id déjà en base AVEC calories pour ne pas les re-fetcher
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT strava_id FROM activities
+                        WHERE user_id = %s AND calories > 0
+                    """, (user_id,))
+                    already_done = {row[0] for row in cur.fetchall()}
+
             saved = 0
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
@@ -169,12 +184,16 @@ def sync_start():
                         track_geojson = None
                         has_gpx       = False
 
-                        try:
-                            detail = strava.get_activity_detail(act["id"])
-                            calories = detail.get("calories") or 0
-                            time.sleep(1)  # ~6 req/sec, sous la limite Strava
-                        except Exception:
-                            calories = act.get("calories") or 0
+                        # Skip le détail si les calories sont déjà en base
+                        if act["id"] in already_done:
+                            calories = None  # préservé par le ON CONFLICT
+                        else:
+                            try:
+                                detail   = strava.get_activity_detail(act["id"])
+                                calories = detail.get("calories") or 0
+                                time.sleep(1)  # 1 req/sec = safe sous la limite Strava
+                            except Exception:
+                                calories = act.get("calories") or 0
 
                         polyline_str = (act.get("map") or {}).get("summary_polyline", "")
                         if polyline_str:
@@ -207,7 +226,11 @@ def sync_start():
                             ON CONFLICT (strava_id) DO UPDATE SET
                                 track_geojson = EXCLUDED.track_geojson,
                                 has_gpx       = EXCLUDED.has_gpx,
-                                calories      = EXCLUDED.calories
+                                calories      = CASE
+                                    WHEN EXCLUDED.calories IS NOT NULL AND EXCLUDED.calories > 0
+                                    THEN EXCLUDED.calories
+                                    ELSE activities.calories
+                                END
                         """, (
                             act["id"], user_id,
                             act.get("name"), act.get("sport_type"),
@@ -215,12 +238,11 @@ def sync_start():
                             act.get("timezone"),
                             act.get("distance"), act.get("moving_time"),
                             act.get("elapsed_time"), act.get("total_elevation_gain"),
-
+                            calories,
                             act.get("average_speed"), act.get("max_speed"),
                             act.get("average_heartrate"), act.get("max_heartrate"),
                             act.get("average_cadence"), act.get("average_watts"),
                             act.get("suffer_score"),
-                            calories,
                             start_ll[0], start_ll[1],
                             end_ll[0],   end_ll[1],
                             track_geojson, has_gpx,
@@ -251,6 +273,10 @@ def sync_status():
     return jsonify(SYNC_JOBS[job_id])
 
 
+# ═══════════════════════════════════════════════════════════════
+# CARTE
+# ═══════════════════════════════════════════════════════════════
+
 @app.route("/map")
 def map_view():
     if "user_id" not in session:
@@ -273,7 +299,7 @@ def api_tracks():
             moving_time_s,
             ROUND(total_elevation_m::numeric)            AS elevation_m,
             ROUND((average_speed_ms * 3.6)::numeric, 1) AS avg_speed_kmh,
-            average_heartrate, track_geojson
+            average_heartrate, calories, track_geojson
         FROM activities
         WHERE user_id = %s
           AND EXTRACT(YEAR FROM start_date_local) = %s
@@ -304,13 +330,16 @@ def api_tracks():
                 "elevation_m":   row["elevation_m"],
                 "avg_speed":     row["avg_speed_kmh"],
                 "heartrate":     row["average_heartrate"],
-                "calories": row.get("calories", 0),
-
+                "calories":      row["calories"],
             }
         })
 
     return jsonify({"type": "FeatureCollection", "features": features})
 
+
+# ═══════════════════════════════════════════════════════════════
+# STATISTIQUES
+# ═══════════════════════════════════════════════════════════════
 
 @app.route("/stats")
 def stats_view():
@@ -363,17 +392,21 @@ def api_stats():
 
     total_km = totals["total_m"] / 1000.0
     fun = {
-        "vaches":         round(totals["total_m"] / 2.4),
-        "lac_leman":      round(total_km / 170, 1),
-        "cervin":     round(totals["total_elevation"] / 4478 , 1),
-        "swissTotal": (round(total_km / 66000, 2))*100,
-        "fondues":         round(totals["total_calories"] / 800),
-        "heures":         round(totals["total_seconds"] / 3600, 1),
+        "vaches":     round(totals["total_m"] / 2.4),
+        "lac_leman":  round(total_km / 170, 1),
+        "cervin":     round(totals["total_elevation"] / 4478, 1),
+        "swissTotal": round((total_km / 66000) * 100, 2),
+        "fondues":    round(totals["total_calories"] / 800),
+        "heures":     round(totals["total_seconds"] / 3600, 1),
     }
 
     return jsonify({"year": year, "totals": totals,
                     "by_sport": by_sport, "by_month": by_month, "fun": fun})
 
+
+# ═══════════════════════════════════════════════════════════════
+# EXPORT GPX
+# ═══════════════════════════════════════════════════════════════
 
 @app.route("/api/gpx/<int:strava_id>")
 def export_gpx(strava_id):
@@ -395,7 +428,7 @@ def export_gpx(strava_id):
     trkpts = "\n".join(f'<trkpt lat="{lat}" lon="{lng}"></trkpt>' for lng, lat in coords)
 
     gpx = f"""<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="VacheMetre">
+<gpx version="1.1" creator="SwissStats">
   <trk><name>{act['name']}</name><type>{act['sport_type'] or 'other'}</type>
   <trkseg>{trkpts}</trkseg></trk>
 </gpx>"""
