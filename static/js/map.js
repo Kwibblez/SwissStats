@@ -183,14 +183,4 @@ function hideLoader() {
 }
 
 
-function toggleSidebar() {
-  const sidebar = document.querySelector('.sidebar');
-
-  sidebar.classList.toggle('collapsed');
-
-  setTimeout(() => {
-    map.invalidateSize(); /* ✅ fixes map resize */
-  }, 300);
-}
-
 loadTracks();
