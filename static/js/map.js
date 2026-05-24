@@ -72,15 +72,18 @@ async function loadTracks() {
       const item = document.createElement('div');
       item.className = 'activity-item';
       item.id = `a${i}`;
-      item.innerHTML = `
-        <span class="sport-tag" style="background:${style.color}18;color:${style.color}">${p.sport_type}</span>
+        item.innerHTML = `
+          <span class="sport-tag" style="background:${style.color}18;color:${style.color}">
+            ${SPORT_FR[p.sport_type] || SPORT_FR.default}
+          </span>
 
           <div class="act-name">${p.name || 'Sans nom'}</div>
+
           <div class="act-meta">
-            ${SPORT_FR[p.sport_type] || SPORT_FR.default} · ${d} · ${p.distance_km} km
+            ${d} · ${p.distance_km} km
             ${p.elevation_m ? `· ↑ ${p.elevation_m}m` : ''}
           </div>
-        ;
+        `;
       item.onclick = () => {
         line.openPopup();
         pick(i, line);
