@@ -172,7 +172,7 @@ def sync_start():
                         try:
                             detail = strava.get_activity_detail(act["id"])
                             calories = detail.get("calories") or 0
-                            time.sleep(0.15)  # ~6 req/sec, sous la limite Strava
+                            time.sleep(1)  # ~6 req/sec, sous la limite Strava
                         except Exception:
                             calories = act.get("calories") or 0
 
