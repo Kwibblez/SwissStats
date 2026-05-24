@@ -328,8 +328,19 @@ body.page-map {
 
 
 .fun-icon {
-  font-size: 24px;
+  width: 110px;
+  height: 110px;
   flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fun-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;   /* ✅ keeps proportions */
 }
 
 .fun-num  { font-size: 18px; font-weight: 700; color: var(--rouge); line-height: 1.2; }
@@ -419,3 +430,35 @@ footer .logo {
 }
 
 .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+
+
+@media (max-width: 600px) {
+
+  .fun-card {
+    min-height: 110px;        /* ✅ slightly smaller */
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .fun-icon {
+    width: 70px;              /* ✅ scaled down image */
+    height: 70px;
+  }
+
+  .fun-icon img {
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .fun-num {
+    font-size: 20px;          /* ✅ smaller number */
+  }
+
+  .fun-lbl {
+    font-size: 14px;
+  }
+
+  .fun-desc {
+    font-size: 12px;
+  }
+}

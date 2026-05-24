@@ -58,12 +58,12 @@ function render(data) {
     <div class="section">
       <div class="section-title">C'est l'équivalent de…</div>
       <div class="fun-grid">
-        <div class="fun-card"><div class="fun-icon"><img src="static/figures/icones/vache.ico"></div><div><div class="fun-num">${fmt(fun.vaches)}</div><div class="fun-lbl">vaches bout à bout (Ô la vache !)</div><div class="fun-desc">Une vache ≈ 2.4 m</div></div></div>
-        <div class="fun-card"><div class="fun-icon"><img src="static/figures/icones/leman.ico"></div><div><div class="fun-num">${fun.lac_leman}×</div><div class="fun-lbl">le tour du lac Léman</div><div class="fun-desc">170 km de tour complet</div></div></div>
-        <div class="fun-card"><div class="fun-icon"><img src="static/figures/icones/cervin.ico"></div><div><div class="fun-num">${fun.cervin}×</div><div class="fun-lbl">l'altitude du Cervin</div><div class="fun-desc">${fmt(Math.round(t.total_elevation))} m de dénivelé en total</div></div></div>
-        <div class="fun-card"><div class="fun-icon"><img src="static/figures/icones/fondue.ico"></div><div><div class="fun-num">${fmt(fun.fondues)}</div><div class="fun-lbl">fondues brûlées</div><div class="fun-desc">≈ 800 kcal par fondue</div></div></div>
-        <div class="fun-card"><div class="fun-icon"><img src="static/figures/icones/country.png"></div><div><div class="fun-num">${fun.swissTotal}%</div><div class="fun-lbl"> de la Suisse parcourue</div><div class="fun-desc">Bien joué !</div></div></div>
-        <div class="fun-card"><div class="fun-icon"><img src="static/figures/icones/cuckoo.ico"></div><div><div class="fun-num">${fun.heures}h</div><div class="fun-lbl">de sport au total</div><div class="fun-desc">Soit ${(fun.heures / 24).toFixed(1)} jours complets</div></div></div>
+        <div class="fun-card"><div class="fun-icon"><img src="static/figures/imgs/vache.png"></div><div><div class="fun-num">${fmt(fun.vaches)}</div><div class="fun-lbl">vaches bout à bout (Ô la vache !)</div><div class="fun-desc">Une vache ≈ 2.4 m</div></div></div>
+        <div class="fun-card"><div class="fun-icon"><img src="static/figures/imgs/lacLeman.jpg"></div><div><div class="fun-num">${fun.lac_leman}×</div><div class="fun-lbl">le tour du lac Léman</div><div class="fun-desc">170 km de tour complet</div></div></div>
+        <div class="fun-card"><div class="fun-icon"><img src="static/figures/imgs/cervin.jpeg"></div><div><div class="fun-num">${fun.cervin}×</div><div class="fun-lbl">l'altitude du Cervin</div><div class="fun-desc">${fmt(Math.round(t.total_elevation))} m de dénivelé en total</div></div></div>
+        <div class="fun-card"><div class="fun-icon"><img src="static/figures/imgs/fondue.jpg"></div><div><div class="fun-num">${fmt(fun.fondues)}</div><div class="fun-lbl">fondues brûlées</div><div class="fun-desc">≈ 800 kcal par fondue</div></div></div>
+        <div class="fun-card"><div class="fun-icon"><img src="static/figures/imgs/country.png"></div><div><div class="fun-num">${fun.swissTotal}%</div><div class="fun-lbl"> de la Suisse parcourue</div><div class="fun-desc">Bien joué !</div></div></div>
+        <div class="fun-card"><div class="fun-icon"><img src="static/figures/imgs/SwissCucko.webp"></div><div><div class="fun-num">${fun.heures}h</div><div class="fun-lbl">de sport au total</div><div class="fun-desc">Soit ${(fun.heures / 24).toFixed(1)} jours complets</div></div></div>
       </div>
     </div>
 
