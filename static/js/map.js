@@ -119,7 +119,7 @@ function buildPopup(p) {
     ['Distance', `${p.distance_km} km`],
     ['Durée', dur],
     p.elevation_m && ['Dénivelé', `${p.elevation_m} m`],
-    p.calories    && ['Calories', `${p.calories} kcal`],
+    ['Calories', `${p.calories ?? 0} kcal`],
     p.avg_speed   && ['Vitesse', `${p.avg_speed} km/h`],
     p.heartrate   && ['FC moy.', `${p.heartrate} bpm`],
   ].filter(Boolean);
