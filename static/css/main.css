@@ -7,8 +7,7 @@
   --surface: #ffffff;
   --border:  #e2e4e9;
   --text:    #1a1d27;
-  --muted:   #6b7280;
-  --faint:   #9ca3af;
+  --muted:   #2a2b2e;
   --rouge: #B51C1C;
   --orange:  #fc4c02;
   --orange-light: #fff2ee;
@@ -280,7 +279,7 @@ body.page-map {
 
 .section       { margin-bottom: 32px; }
 .section-title {
-  font-size: 11px;
+  font-size: 28px;
   font-weight: 700;
   color: var(--muted);
   text-transform: uppercase;
@@ -292,20 +291,32 @@ body.page-map {
 
 .totals-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
 }
 .stat-card {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 5px solid var(--rouge);
   border-radius: 10px;
-  padding: 16px 14px;
+  padding: 16px;
   text-align: center;
   box-shadow: var(--shadow);
+  min-height: 400;
+
+
 }
-.stat-card .icon { font-size: 20px; margin-bottom: 8px; }
-.stat-card .val  { font-size: 20px; font-weight: 700; color: var(--rouge); line-height: 1; }
-.stat-card .unit { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.stat-card .val  {
+    font-size: 64px;
+    font-weight: 800;
+    color: var(--rouge);
+    line-height: 1;
+}
+
+.stat-card .unit {
+    font-size: 24px;
+    color: var(--muted);
+    margin-top: 4px;
+}
 
 
 .fun-grid {
@@ -317,7 +328,7 @@ body.page-map {
 
 .fun-card {
   background: var(--surface);
-  border: 2px solid var(--rouge);
+  border: 5px solid var(--rouge);
   border-radius: 10px;
   padding: 16px;
   display: flex;
@@ -328,8 +339,8 @@ body.page-map {
 
 
 .fun-icon {
-  width: 110px;
-  height: 110px;
+  width: 450px;
+  height: 400px;
   flex-shrink: 0;
 
   display: flex;
@@ -343,9 +354,9 @@ body.page-map {
   object-fit: contain;   /* ✅ keeps proportions */
 }
 
-.fun-num  { font-size: 18px; font-weight: 700; color: var(--rouge); line-height: 1.2; }
-.fun-lbl  { font-size: 13px; font-weight: 500; margin-top: 2px; }
-.fun-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.fun-num  { font-size: 64px; font-weight: 700; color: var(--rouge); line-height: 1.2; }
+.fun-lbl  { font-size: 32px; font-weight: 500; margin-top: 2px; }
+.fun-desc { font-size: 24px; color: var(--muted); margin-top: 2px; }
 
 .charts-grid {
   display: grid;
@@ -415,16 +426,20 @@ body.page-map {
   text-decoration: none;
 }
 .strava-btn:hover { opacity: 0.9; }
+
 .login-footer { 
   margin-top: 16px; 
-  font-size: 11px; 
-  color: var(--faint); }
+  font-size: 15px;
+  color: var(--muted);
+  text-align: center;
+
+  }
 
 
 footer .logo {
   display: block;
   margin: 0 auto;
-  max-height: 40px;
+  max-height: 54px;
   height: auto;
   width: auto;
 }
@@ -461,4 +476,25 @@ footer .logo {
   .fun-desc {
     font-size: 12px;
   }
+
+
+
+  .totals-grid {
+    grid-template-columns: 1fr; /* ✅ 1 per row */
+  }
+
+  .stat-card {
+    min-height: 90px;
+    padding: 14px;
+
+  }
+
+  .stat-card .val {
+    font-size: 20px;
+  }
+
+  .stat-card .unit {
+    font-size: 12px;
+  }
+
 }
