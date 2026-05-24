@@ -60,6 +60,22 @@ def _decode_polyline(polyline_str):
     return coords
 
 
+def estimate_calories(moving_time_s, avg_heartrate):
+    """
+    Estimation des calories via FC et durée (formule ACSM).
+    Valeurs moyennes supposées : 70 kg, 30 ans.
+    Précision ~10-15%, suffisant pour stats fun.
+    """
+    if moving_time_s and avg_heartrate:
+        mins = moving_time_s / 60.0
+        kcal = (-55.0969 + 0.6309 * avg_heartrate + 0.1988 * 70 + 0.2017 * 30) / 4.184 * mins
+        return max(0, round(kcal))
+    # Fallback sans FC : ~600 kcal/heure (effort modéré)
+    if moving_time_s:
+        return round(moving_time_s / 3600 * 600)
+    return 0
+
+
 # ═══════════════════════════════════════════════════════════════
 # OAUTH STRAVA
 # ═══════════════════════════════════════════════════════════════
@@ -167,15 +183,6 @@ def sync_start():
             total = len(activities)
             SYNC_JOBS[job_id].update({"total": total, "msg": f"{total} activites trouvees..."})
 
-            # Récupère les strava_id déjà en base AVEC calories pour ne pas les re-fetcher
-            with get_db_connection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute("""
-                        SELECT strava_id FROM activities
-                        WHERE user_id = %s AND calories > 0
-                    """, (user_id,))
-                    already_done = {row[0] for row in cur.fetchall()}
-
             saved = 0
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
@@ -184,16 +191,11 @@ def sync_start():
                         track_geojson = None
                         has_gpx       = False
 
-                        # Skip le détail si les calories sont déjà en base
-                        if act["id"] in already_done:
-                            calories = None  # préservé par le ON CONFLICT
-                        else:
-                            try:
-                                detail   = strava.get_activity_detail(act["id"])
-                                calories = detail.get("calories") or 0
-                                time.sleep(1)  # 1 req/sec = safe sous la limite Strava
-                            except Exception:
-                                calories = act.get("calories") or 0
+                        # Estimation calories locale — 0 appel API, instantané
+                        calories = estimate_calories(
+                            act.get("moving_time"),
+                            act.get("average_heartrate")
+                        )
 
                         polyline_str = (act.get("map") or {}).get("summary_polyline", "")
                         if polyline_str:
@@ -226,11 +228,7 @@ def sync_start():
                             ON CONFLICT (strava_id) DO UPDATE SET
                                 track_geojson = EXCLUDED.track_geojson,
                                 has_gpx       = EXCLUDED.has_gpx,
-                                calories      = CASE
-                                    WHEN EXCLUDED.calories IS NOT NULL AND EXCLUDED.calories > 0
-                                    THEN EXCLUDED.calories
-                                    ELSE activities.calories
-                                END
+                                calories      = EXCLUDED.calories
                         """, (
                             act["id"], user_id,
                             act.get("name"), act.get("sport_type"),
