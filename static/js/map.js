@@ -1,16 +1,31 @@
 // map.js
 
 const SPORTS = {
-  Run:       { color: '#fc4c02', emoji: '🏃' },
-  Ride:      { color: '#3b82f6', emoji: '🚴' },
-  Hike:      { color: '#16a34a', emoji: '🥾' },
-  Walk:      { color: '#84cc16', emoji: '🚶' },
-  Swim:      { color: '#06b6d4', emoji: '🏊' },
-  AlpineSki: { color: '#8b5cf6', emoji: '⛷️' },
-  NordicSki: { color: '#a855f7', emoji: '🎿' },
-  TrailRun:    { color: '#f59e0b', emoji: '⛰️' },
-  default:   { color: '#6b7280', emoji: '🏅' },
+  Run:       { color: '#fc4c02' },
+  Ride:      { color: '#3b82f6'},
+  Hike:      { color: '#16a34a'},
+  Walk:      { color: '#84cc16'},
+  Swim:      { color: '#06b6d4'},
+  AlpineSki: { color: '#8b5cf6'},
+  NordicSki: { color: '#a855f7'},
+  TrailRun:    { color: '#f59e0b'},
+  default:   { color: '#6b7280'},
 };
+
+
+const SPORT_FR = {
+  Run: 'Course à pied',
+  TrailRun: 'Trail',
+  Ride: 'Vélo',
+  Walk: 'Marche',
+  Hike: 'Randonnée',
+  Swim: 'Natation',
+  AlpineSki: 'Ski alpin',
+  NordicSki: 'Ski nordique',
+  default: 'Autre'
+};
+
+
 const sp = (s) => SPORTS[s] || SPORTS.default;
 
 // Carte avec fond clair
@@ -58,13 +73,14 @@ async function loadTracks() {
       item.className = 'activity-item';
       item.id = `a${i}`;
       item.innerHTML = `
-        <span class="sport-tag" style="background:${style.color}18;color:${style.color}">${style.emoji} ${p.sport_type}</span>
-        <div class="act-name">${p.name || 'Sans nom'}</div>
-        <div class="act-meta">
-          <span>${d}</span>
-          <span>${p.distance_km} km</span>
-          ${p.elevation_m ? `<span>↑ ${p.elevation_m}m</span>` : ''}
-        </div>`;
+        <span class="sport-tag" style="background:${style.color}18;color:${style.color}">${p.sport_type}</span>
+
+          <div class="act-name">${p.name || 'Sans nom'}</div>
+          <div class="act-meta">
+            ${SPORT_FR[p.sport_type] || SPORT_FR.default} · ${d} · ${p.distance_km} km
+            ${p.elevation_m ? `· ↑ ${p.elevation_m}m` : ''}
+          </div>
+        ;
       item.onclick = () => {
         line.openPopup();
         pick(i, line);
@@ -164,6 +180,17 @@ function showLoader(msg, icon = '⚡') {
 }
 function hideLoader() {
   document.getElementById('loader').classList.remove('active');
+}
+
+
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+
+  sidebar.classList.toggle('collapsed');
+
+  setTimeout(() => {
+    map.invalidateSize(); /* ✅ fixes map resize */
+  }, 300);
 }
 
 loadTracks();

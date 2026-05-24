@@ -152,6 +152,7 @@ body.page-map {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: width 0.25s ease;
 }
 .sidebar-header {
   padding: 10px 14px;
@@ -162,6 +163,17 @@ body.page-map {
   letter-spacing: 0.6px;
   border-bottom: 1px solid var(--border);
 }
+
+.sidebar.collapsed {
+  width: 0;
+  overflow: hidden;
+}
+
+.main.full {
+  grid-template-columns: 1fr;
+}
+
+
 #activityList { overflow-y: auto; flex: 1; }
 #activityList::-webkit-scrollbar { width: 4px; }
 #activityList::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
