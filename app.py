@@ -169,6 +169,13 @@ def sync_start():
                         track_geojson = None
                         has_gpx       = False
 
+                        try:
+                            detail = strava.get_activity_detail(act["id"])
+                            calories = detail.get("calories") or 0
+                            time.sleep(0.15)  # ~6 req/sec, sous la limite Strava
+                        except Exception:
+                            calories = act.get("calories") or 0
+
                         polyline_str = (act.get("map") or {}).get("summary_polyline", "")
                         if polyline_str:
                             has_gpx       = True
@@ -208,11 +215,12 @@ def sync_start():
                             act.get("timezone"),
                             act.get("distance"), act.get("moving_time"),
                             act.get("elapsed_time"), act.get("total_elevation_gain"),
-                            act.get("calories") or 0,
+
                             act.get("average_speed"), act.get("max_speed"),
                             act.get("average_heartrate"), act.get("max_heartrate"),
                             act.get("average_cadence"), act.get("average_watts"),
                             act.get("suffer_score"),
+                            calories,
                             start_ll[0], start_ll[1],
                             end_ll[0],   end_ll[1],
                             track_geojson, has_gpx,
