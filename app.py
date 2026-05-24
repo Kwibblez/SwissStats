@@ -63,12 +63,12 @@ def _decode_polyline(polyline_str):
 def estimate_calories(moving_time_s, avg_heartrate):
     """
     Estimation des calories via FC et durée (formule ACSM).
-    Valeurs moyennes supposées : 70 kg, 30 ans.
+    Valeurs moyennes supposées : 60 kg, 30 ans.
     Précision ~10-15%, suffisant pour stats fun.
     """
     if moving_time_s and avg_heartrate:
         mins = moving_time_s / 60.0
-        kcal = (-55.0969 + 0.6309 * avg_heartrate + 0.1988 * 70 + 0.2017 * 30) / 4.184 * mins
+        kcal = (-55.0969 + 0.6309 * avg_heartrate + 0.1988 * 60 + 0.2017 * 25) / 4.184 * mins
         return max(0, round(kcal))
     # Fallback sans FC : ~600 kcal/heure (effort modéré)
     if moving_time_s:

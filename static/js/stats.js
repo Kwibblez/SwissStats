@@ -8,9 +8,16 @@ const COLORS = {
 };
 
 
-const EMOJI = {
-  Run: '🏃', Ride: '🚴', Hike: '🥾', Walk: '🚶', Swim: '🏊',
-  AlpineSki: '⛷️', NordicSki: '🎿', TrailRun: '⛰️', default: '🏅',
+const SPORT_FR = {
+  Run: 'Course à pied',
+  TrailRun: 'Trail',
+  Ride: 'Vélo',
+  Walk: 'Marche',
+  Hike: 'Randonnée',
+  Swim: 'Natation',
+  AlpineSki: 'Ski alpin',
+  NordicSki: 'Ski nordique',
+  default: 'Autre'
 };
 
 
@@ -116,7 +123,6 @@ function render(data) {
 
   data.by_sport.forEach(s => {
     const c = COLORS[s.sport_type] || COLORS.default;
-    const e = EMOJI[s.sport_type]  || EMOJI.default;
     document.getElementById('sportBody').innerHTML +=
       `<tr>
         <td><span class="sport-dot" style="background:${c}"></span>${e} ${s.sport_type}</td>
@@ -156,7 +162,7 @@ function render(data) {
   cSport = new Chart(document.getElementById('cSport'), {
     type: 'doughnut',
     data: {
-      labels: data.by_sport.map(s => `${EMOJI[s.sport_type] || '🏅'} ${s.sport_type}`),
+      labels: data.by_sport.map(s => `${s.SPORT_FR}`),
       datasets: [{
         data: data.by_sport.map(s => +s.km || 0),
         backgroundColor: data.by_sport.map(s => COLORS[s.sport_type] || COLORS.default),

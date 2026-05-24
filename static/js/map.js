@@ -41,7 +41,7 @@ let selected   = null;
 async function loadTracks() {
   const year  = document.getElementById('yearInput').value;
   const sport = document.getElementById('sportFilter').value;
-  showLoader('Chargement des parcours…', '🗺');
+  showLoader('Chargement des parcours…');
   trackLayer.clearLayers();
   document.getElementById('activityList').innerHTML = '';
 
@@ -135,7 +135,7 @@ function buildPopup(p) {
 
 async function syncActivities() {
   const year = document.getElementById('yearInput').value;
-  showLoader('Connexion à Strava…', '🔄');
+  showLoader('Connexion à Strava…');
 
   // Lance le job en arrière-plan
   const res = await fetch(`/sync?year=${year}`);
