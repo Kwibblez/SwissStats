@@ -118,7 +118,8 @@ SELECT
     SUM(a.moving_time_s) / 3600.0                        AS total_hours,
     ROUND(SUM(a.total_elevation_m)::numeric)             AS total_elevation_m,
     ROUND(SUM(a.calories)::numeric)                      AS total_calories,
-    ROUND(AVG(a.average_heartrate)::numeric, 1)          AS avg_heartrate
+    ROUND(AVG(a.average_heartrate)::numeric, 1)          AS avg_heartrate,
+    calories
 FROM activities a
 JOIN users u ON a.user_id = u.id
 WHERE a.start_date_local IS NOT NULL

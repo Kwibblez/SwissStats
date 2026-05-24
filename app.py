@@ -286,7 +286,8 @@ def api_tracks():
                 "elevation_m":   row["elevation_m"],
                 "avg_speed":     row["avg_speed_kmh"],
                 "heartrate":     row["average_heartrate"],
-                "calories": row["calories"]
+                "calories": row.get("calories", 0),
+
             }
         })
 
