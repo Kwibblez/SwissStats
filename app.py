@@ -30,6 +30,16 @@ STRAVA_SCOPES        = "read,activity:read_all"
 SYNC_JOBS = {}
 
 
+app.config.update(
+    SESSION_COOKIE_SAMESITE="None",
+    SESSION_COOKIE_SECURE=True
+)
+
+
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+
 def _decode_polyline(polyline_str):
     coords = []
     index, lat, lng = 0, 0, 0
