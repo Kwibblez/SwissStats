@@ -29,15 +29,6 @@ STRAVA_SCOPES        = "read,activity:read_all"
 
 SYNC_JOBS = {}
 
-app.config.update(
-    SESSION_COOKIE_SAMESITE="None",
-    SESSION_COOKIE_SECURE=True
-)
-
-from werkzeug.middleware.proxy_fix import ProxyFix
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
-
-
 def _decode_polyline(polyline_str):
     coords = []
     index, lat, lng = 0, 0, 0
@@ -438,4 +429,4 @@ def export_gpx(strava_id):
 if __name__ == "__main__":
     init_db()
     port = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(debug=True, port=port)
