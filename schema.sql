@@ -6,6 +6,9 @@
 -- ============================================================
 -- TABLE : users
 -- ============================================================
+-- Supprime tout et recrée
+
+
 CREATE TABLE IF NOT EXISTS users (
     id                  SERIAL PRIMARY KEY,
     strava_id           BIGINT UNIQUE NOT NULL,
@@ -74,7 +77,7 @@ SELECT
     ROUND((SUM(a.distance_m) / 1000.0)::numeric, 2) AS total_km,
     SUM(a.moving_time_s) / 3600.0                   AS total_hours,
     ROUND(SUM(a.total_elevation_m)::numeric)         AS total_elevation_m,
-    ROUND(SUM(a.calories)::numeric)                  AS total_calories,
+    ROUND(SUM(calories)::numeric)                  AS total_calories,
     ROUND(AVG(a.average_heartrate)::numeric, 1)      AS avg_heartrate
 FROM activities a
 JOIN users u ON a.user_id = u.id
