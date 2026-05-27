@@ -38,7 +38,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 
-def _decode_polyline(polyline_str):
+def _decode_polyline(polyline_str): #transforme GPX en polyligne
     coords = []
     index, lat, lng = 0, 0, 0
     while index < len(polyline_str):
@@ -63,7 +63,7 @@ def _decode_polyline(polyline_str):
 def estimate_calories(moving_time_s, avg_heartrate):
     """
     Estimation des calories via FC et durée (formule ACSM).
-    Valeurs moyennes supposées : 60 kg, 30 ans.
+    Valeurs moyennes supposées : 60 kg, 25 ans.
     Précision ~10-15%, suffisant pour stats fun.
     """
     if moving_time_s and avg_heartrate:
@@ -83,12 +83,12 @@ def estimate_calories(moving_time_s, avg_heartrate):
 @app.route("/")
 def index():
     if "user_id" not in session:
-        return render_template("login.html")
+        return render_template("login.html") #pour connecter l'utilisateur
     return redirect(url_for("map_view"))
 
 
 @app.route("/login")
-def login():
+def login(): # redirecte sur page strava pour demander le compte de l'utilisateur
     auth_url = (
         f"https://www.strava.com/oauth/authorize"
         f"?client_id={STRAVA_CLIENT_ID}"
@@ -101,16 +101,16 @@ def login():
 
 
 @app.route("/callback")
-def callback():
+def callback(): 
     code = request.args.get("code")
-    if not code:
+    if not code: # si arrive pas a connecter
         return "Erreur : pas de code reçu de Strava.", 400
 
     strava     = StravaAPI(STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET)
     token_data = strava.exchange_code(code, STRAVA_REDIRECT_URI)
     athlete    = token_data.get("athlete", {})
 
-    with get_db_connection() as conn:
+    with get_db_connection() as conn: # résupère info pour mettre dans DB
         with conn.cursor() as cur:
             cur.execute("""
                 INSERT INTO users (strava_id, access_token, refresh_token,
@@ -153,7 +153,7 @@ def logout():
 # SYNC STRAVA — thread background + polling
 # ═══════════════════════════════════════════════════════════════
 
-@app.route("/sync")
+@app.route("/sync") # synchroniser les données de l'utilisateur
 def sync_start():
     if "user_id" not in session:
         return jsonify({"error": "non connecte"}), 401
@@ -252,7 +252,7 @@ def sync_start():
 
                     conn.commit()
 
-            SYNC_JOBS[job_id].update({
+            SYNC_JOBS[job_id].update({ # message pour dire que c'est fini
                 "pct": 100, "finished": True,
                 "msg": f"{saved} activites synchronisees !"
             })
@@ -284,7 +284,7 @@ def map_view():
 
 
 @app.route("/api/tracks")
-def api_tracks():
+def api_tracks(): # récupère les données des courses de la DB pour la carte
     if "user_id" not in session:
         return jsonify({"error": "non connecte"}), 401
 
@@ -407,7 +407,7 @@ def api_stats():
 # ═══════════════════════════════════════════════════════════════
 
 @app.route("/api/gpx/<int:strava_id>")
-def export_gpx(strava_id):
+def export_gpx(strava_id): # exporte une course en GPX
     if "user_id" not in session:
         return jsonify({"error": "non connecte"}), 401
 
