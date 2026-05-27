@@ -1,6 +1,6 @@
 // map.js
 
-const SPORTS = {
+const SPORTS = { // couleur pour les différentes courses
   Run:       { color: '#fc4c02' },
   Ride:      { color: '#3b82f6'},
   Hike:      { color: '#16a34a'},
@@ -13,7 +13,7 @@ const SPORTS = {
 };
 
 
-const SPORT_FR = {
+const SPORT_FR = { // nom des courses traduit en fr
   Run: 'Course à pied',
   TrailRun: 'Trail',
   Ride: 'Vélo',
@@ -38,7 +38,7 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
 let trackLayer = L.layerGroup().addTo(map);
 let selected   = null;
 
-async function loadTracks() {
+async function loadTracks() { // affiche les tracés sur la carte
   const year  = document.getElementById('yearInput').value;
   const sport = document.getElementById('sportFilter').value;
   showLoader('Chargement des parcours…');
@@ -110,7 +110,7 @@ function pick(i, line) {
   el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function buildPopup(p) {
+function buildPopup(p) { // fenêtre quand on appui sur un tracé
   const dur = p.moving_time_s
     ? `${Math.floor(p.moving_time_s / 3600)}h${String(Math.floor(p.moving_time_s % 3600 / 60)).padStart(2, '0')}`
     : '—';
@@ -173,7 +173,7 @@ async function syncActivities() {
   }, 1000);
 }
 
-function showLoader(msg, icon = '⚡') {
+function showLoader(msg, icon = ' ') {
   document.getElementById('loaderIcon').textContent  = icon;
   document.getElementById('loaderSub').textContent   = msg;
   document.getElementById('progTrack').style.display = 'none';
