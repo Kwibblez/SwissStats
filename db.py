@@ -44,4 +44,4 @@ def init_db():
         with conn.cursor() as cur:
             cur.execute(sql)
         conn.commit()
-    print("✅ Base de données initialisée.")
+    print("Base de données initialisée.")
