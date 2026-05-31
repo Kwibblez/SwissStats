@@ -61,7 +61,7 @@ requests>=2.31
 
 3. Notez votre **Client ID** et **Client Secret**
 
-<img src="/static/figures/imgs/strava_api_settings.jpeg" alt="description" width="500">
+<img src="/static/figures/imgs/strava_api_settings.jpeg" alt="strava api settings" width="500">
 
 
  L'URL de callback doit correspondre exactement à `STRAVA\_REDIRECT\_URI` dans votre `.env`.
@@ -92,11 +92,11 @@ La base contient deux tables principales :
 
 **Table `users`** — stocke les tokens OAuth Strava de chaque utilisateur.
 
-!\[Table users](https://github.com/Kwibblez/SwissStats/blob/main/static/figures/imgs/table\_users.jpeg)
+<img src="/static/figures/imgs/table_users.jpeg" alt="strava api settings" width="500">
 
 **Table `activities`** — stocke toutes les activités avec leur géométrie PostGIS.
+<img src="/static/figures/imgs/table_activities.jpeg" alt="db activites" width="500">
 
-!\[Table activities](https://github.com/Kwibblez/SwissStats/blob/main/static/figures/imgs/table\_activities.jpeg)
 
 La géométrie des tracés GPS est stockée dans la colonne `track\_geom` de type `GEOMETRY(LINESTRING, 4326)`, indexée avec un index GIST pour les requêtes spatiales.
 
