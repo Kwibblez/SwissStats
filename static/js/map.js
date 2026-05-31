@@ -1,43 +1,81 @@
-// map.js
+// map.js — SwissStats
 
 const SPORTS = {
   Run:       { color: '#fc4c02' },
-  Ride:      { color: '#3b82f6'},
-  Hike:      { color: '#16a34a'},
-  Walk:      { color: '#84cc16'},
-  Swim:      { color: '#06b6d4'},
-  AlpineSki: { color: '#8b5cf6'},
-  NordicSki: { color: '#a855f7'},
-  TrailRun:    { color: '#f59e0b'},
-  default:   { color: '#6b7280'},
+  TrailRun:  { color: '#f59e0b' },
+  Ride:      { color: '#3b82f6' },
+  Hike:      { color: '#16a34a' },
+  Walk:      { color: '#84cc16' },
+  Swim:      { color: '#06b6d4' },
+  AlpineSki: { color: '#8b5cf6' },
+  NordicSki: { color: '#a855f7' },
+  default:   { color: '#6b7280' },
 };
-
 
 const SPORT_FR = {
-  Run: 'Course à pied',
-  TrailRun: 'Trail',
-  Ride: 'Vélo',
-  Walk: 'Marche',
-  Hike: 'Randonnée',
-  Swim: 'Natation',
+  Run:       'Course à pied',
+  TrailRun:  'Trail',
+  Ride:      'Vélo',
+  Walk:      'Marche',
+  Hike:      'Randonnée',
+  Swim:      'Natation',
   AlpineSki: 'Ski alpin',
   NordicSki: 'Ski nordique',
-  default: 'Autre'
+  default:   'Autre',
 };
-
 
 const sp = (s) => SPORTS[s] || SPORTS.default;
 
 // Carte avec fond clair
-const map = L.map('map').setView([46.5, 8.0], 8);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-  attribution: '© OpenStreetMap © CARTO',
-  maxZoom: 19,
-}).addTo(map);
+const basemaps = {
+  carto: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO', maxZoom: 19,
+  }),
+  //carte suisse topo en couleur
+  swisstopo: L.tileLayer.wms('https://wms.geo.admin.ch/', {
+    layers: 'ch.swisstopo.pixelkarte-farbe', format: 'image/png',
+    transparent: false, attribution: '© swisstopo', maxZoom: 20,
+  }),
+  //carte suisse topo en grise
+  swisstopoGray: L.tileLayer.wms('https://wms.geo.admin.ch/', {
+    layers: 'ch.swisstopo.pixelkarte-grau', format: 'image/png',
+    transparent: false, attribution: '© swisstopo', maxZoom: 20,
+  }),
+};
 
+// Initialisation de la carte
+const map = L.map('map').setView([46.8, 8.2], 8);
+basemaps.carto.addTo(map);
+let currentBasemap = basemaps.carto;
+
+// Déclarations AVANT tout le reste
 let trackLayer = L.layerGroup().addTo(map);
 let selected   = null;
 
+// Outil de mesure
+try {
+  L.control.measure({
+    primaryLengthUnit:   'kilometers',
+    secondaryLengthUnit: 'meters',
+    primaryAreaUnit:     'sqkilometers',
+    activeColor:         '#fc4c02',
+    completedColor:      '#fc4c02',
+    position:            'topleft',
+  }).addTo(map);
+} catch (e) {
+  console.warn('Leaflet-measure non disponible :', e.message);
+}
+
+//  Changement de fond de carte
+function switchBasemap() {
+  const key = document.getElementById('basemapSelect').value;
+  map.removeLayer(currentBasemap);
+  currentBasemap = basemaps[key];
+  currentBasemap.addTo(map);
+  currentBasemap.bringToBack();
+}
+
+// Chargement des tracés
 async function loadTracks() {
   const year  = document.getElementById('yearInput').value;
   const sport = document.getElementById('sportFilter').value;
@@ -51,7 +89,6 @@ async function loadTracks() {
     const feats = data.features || [];
 
     document.getElementById('countBadge').innerHTML = `<b>${feats.length}</b> parcours`;
-
     if (!feats.length) { hideLoader(); return; }
 
     const bounds = [];
@@ -72,18 +109,12 @@ async function loadTracks() {
       const item = document.createElement('div');
       item.className = 'activity-item';
       item.id = `a${i}`;
-        item.innerHTML = `
-          <span class="sport-tag" style="background:${style.color}18;color:${style.color}">
-            ${SPORT_FR[p.sport_type] || SPORT_FR.default}
-          </span>
-
-          <div class="act-name">${p.name || 'Sans nom'}</div>
-
-          <div class="act-meta">
-            ${d} · ${p.distance_km} km
-            ${p.elevation_m ? `· ↑ ${p.elevation_m}m` : ''}
-          </div>
-        `;
+      item.innerHTML = `
+        <span class="sport-tag" style="background:${style.color}18;color:${style.color}">
+          ${SPORT_FR[p.sport_type] || SPORT_FR.default}
+        </span>
+        <div class="act-name">${p.name || 'Sans nom'}</div>
+        <div class="act-meta">${d} · ${p.distance_km} km${p.elevation_m ? ` · ↑ ${p.elevation_m}m` : ''}</div>`;
       item.onclick = () => {
         line.openPopup();
         pick(i, line);
@@ -116,12 +147,12 @@ function buildPopup(p) {
     : '—';
   const d = new Date(p.date).toLocaleDateString('fr-CH', { day: '2-digit', month: 'long', year: 'numeric' });
   const stats = [
-    ['Distance', `${p.distance_km} km`],
-    ['Durée', dur],
+    ['Distance',  `${p.distance_km} km`],
+    ['Durée',     dur],
     p.elevation_m && ['Dénivelé', `${p.elevation_m} m`],
-    ['Calories', `${p.calories ?? 0} kcal`],
-    p.avg_speed   && ['Vitesse', `${p.avg_speed} km/h`],
-    p.heartrate   && ['FC moy.', `${p.heartrate} bpm`],
+    p.calories    && ['Calories',  `${p.calories} kcal`],
+    p.avg_speed   && ['Vitesse',   `${p.avg_speed} km/h`],
+    p.heartrate   && ['FC moy.',   `${p.heartrate} bpm`],
   ].filter(Boolean);
 
   return `
@@ -133,48 +164,43 @@ function buildPopup(p) {
     <a class="pop-gpx" href="/api/gpx/${p.id}" download>⬇ Exporter GPX</a>`;
 }
 
+// Sync Strava
 async function syncActivities() {
   const year = document.getElementById('yearInput').value;
   showLoader('Connexion à Strava…');
 
-  // Lance le job en arrière-plan
-  const res = await fetch(`/sync?year=${year}`);
-  const { job_id } = await res.json();
+  let job_id;
+  try {
+    const res  = await fetch(`/sync?year=${year}`);
+    const data = await res.json();
+    if (data.error) { hideLoader(); alert('Erreur : ' + data.error); return; }
+    job_id = data.job_id;
+  } catch (e) {
+    hideLoader();
+    alert('Impossible de démarrer la sync : ' + e.message);
+    return;
+  }
 
-  // Poll la progression toutes les secondes
   const interval = setInterval(async () => {
     try {
-      const r   = await fetch(`/sync/status?job_id=${job_id}`);
-      const d   = await r.json();
-
+      const r = await fetch(`/sync/status?job_id=${job_id}`);
+      const d = await r.json();
       document.getElementById('loaderSub').textContent = d.msg || '';
-
       if (d.total > 0) {
         document.getElementById('progTrack').style.display = 'block';
         document.getElementById('progBar').style.width     = (d.pct || 0) + '%';
         document.getElementById('progLabel').textContent   = `${d.done} / ${d.total} activités`;
       }
-
-      if (d.error) {
-        clearInterval(interval);
-        hideLoader();
-        alert('Erreur : ' + d.error);
-      }
-
-      if (d.finished) {
-        clearInterval(interval);
-        setTimeout(() => { hideLoader(); loadTracks(); }, 800);
-      }
+      if (d.error)    { clearInterval(interval); hideLoader(); alert('Erreur : ' + d.error); }
+      if (d.finished) { clearInterval(interval); setTimeout(() => { hideLoader(); loadTracks(); }, 800); }
     } catch {
-      clearInterval(interval);
-      hideLoader();
-      alert('Erreur de synchronisation.');
+      clearInterval(interval); hideLoader(); alert('Erreur de synchronisation.');
     }
   }, 1000);
 }
 
-function showLoader(msg, icon = '⚡') {
-  document.getElementById('loaderIcon').textContent  = icon;
+// Loader
+function showLoader(msg) {
   document.getElementById('loaderSub').textContent   = msg;
   document.getElementById('progTrack').style.display = 'none';
   document.getElementById('progBar').style.width     = '0%';
@@ -184,6 +210,5 @@ function showLoader(msg, icon = '⚡') {
 function hideLoader() {
   document.getElementById('loader').classList.remove('active');
 }
-
 
 loadTracks();

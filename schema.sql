@@ -1,14 +1,13 @@
 -- ============================================================
--- SwissStats — Schéma PostgreSQL
+-- SwissStats — Schéma PostgreSQL + PostGIS
 -- HEIG-VD, 2026 — Fardel, Perroud, Smith
 -- ============================================================
+
+CREATE EXTENSION IF NOT EXISTS postgis;
 
 -- ============================================================
 -- TABLE : users
 -- ============================================================
--- Supprime tout et recrée
-
-
 CREATE TABLE IF NOT EXISTS users (
     id                  SERIAL PRIMARY KEY,
     strava_id           BIGINT UNIQUE NOT NULL,
@@ -52,12 +51,15 @@ CREATE TABLE IF NOT EXISTS activities (
     start_lng           FLOAT,
     end_lat             FLOAT,
     end_lng             FLOAT,
-    track_geojson       TEXT,
+    track_geom          GEOMETRY(LINESTRING, 4326),
     has_gpx             BOOLEAN DEFAULT FALSE,
     manual              BOOLEAN DEFAULT FALSE,
     commute             BOOLEAN DEFAULT FALSE,
     created_at          TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_activities_track_geom
+    ON activities USING GIST(track_geom);
 
 CREATE INDEX IF NOT EXISTS idx_activities_user_date
     ON activities(user_id, start_date_local);
@@ -66,7 +68,7 @@ CREATE INDEX IF NOT EXISTS idx_activities_sport_type
     ON activities(sport_type);
 
 -- ============================================================
--- VUE : stats annuelles par utilisateur et sport
+-- VUE : stats annuelles
 -- ============================================================
 CREATE OR REPLACE VIEW yearly_stats AS
 SELECT
@@ -77,7 +79,7 @@ SELECT
     ROUND((SUM(a.distance_m) / 1000.0)::numeric, 2) AS total_km,
     SUM(a.moving_time_s) / 3600.0                   AS total_hours,
     ROUND(SUM(a.total_elevation_m)::numeric)         AS total_elevation_m,
-    ROUND(SUM(calories)::numeric)                  AS total_calories,
+    ROUND(SUM(a.calories)::numeric)                  AS total_calories,
     ROUND(AVG(a.average_heartrate)::numeric, 1)      AS avg_heartrate
 FROM activities a
 JOIN users u ON a.user_id = u.id

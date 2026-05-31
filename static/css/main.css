@@ -1,4 +1,3 @@
-/* VacheMètre — Light Theme */
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -49,6 +48,7 @@ nav {
 }
 .logo span { color: var(--text); }
 
+/* Liens navigation */
 nav a {
   font-size: 13px;
   color: var(--muted);
@@ -57,9 +57,12 @@ nav a {
   border-radius: var(--radius);
   transition: background 0.15s, color 0.15s;
 }
+
+/* Effets hover et actif */
 nav a:hover  { background: var(--bg); color: var(--text); }
 nav a.active { background: var(--rouge-light); color: var(--rouge); font-weight: 500; }
 
+/* Espace flexible (push éléments à droite) */
 .spacer { flex: 1; }
 
 .nav-badge {
@@ -82,7 +85,7 @@ nav a.active { background: var(--rouge-light); color: var(--rouge); font-weight:
 }
 .nav-btn:hover { background: var(--bg); }
 
-/* ── Boutons ─────────────────────────────── */
+/* Boutons */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -97,13 +100,12 @@ nav a.active { background: var(--rouge-light); color: var(--rouge); font-weight:
   background: var(--surface);
   color: var(--text);
   transition: background 0.15s;
-  text-decoration: none;
 }
 .btn:hover        { background: var(--bg); }
 .btn-orange       { background: var(--orange); border-color: var(--orange); color: #fff; }
 .btn-orange:hover { opacity: 0.9; }
 
-/* ── Inputs ──────────────────────────────── */
+/* Inputs */
 input, select {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -118,7 +120,7 @@ input:focus, select:focus {
   border-color: var(--rouge);
 }
 
-/* ── Layout carte ────────────────────────── */
+/* Layout carte */
 body.page-map {
   height: 100vh;
   display: flex;
@@ -143,7 +145,7 @@ body.page-map {
 .main { flex: 1; display: flex; overflow: hidden; }
 #map  { flex: 1; min-width: 0; }
 
-/* ── Sidebar ─────────────────────────────── */
+/* Sidebar  */
 .sidebar {
   width: 270px;
   flex-shrink: 0;
@@ -171,7 +173,11 @@ body.page-map {
 }
 
 
-#activityList { overflow-y: auto; flex: 1; }
+#activityList {
+    overflow-y: auto;
+    flex: 1;
+}
+
 #activityList::-webkit-scrollbar { width: 4px; }
 #activityList::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
@@ -204,7 +210,7 @@ body.page-map {
 }
 .act-meta { font-size: 11px; color: var(--muted); display: flex; gap: 8px; margin-top: 2px; }
 
-/* ── Popup Leaflet ───────────────────────── */
+/* Popup Leaflet  */
 .leaflet-popup-content-wrapper {
   background: var(--surface) !important;
   color: var(--text) !important;
@@ -236,7 +242,7 @@ body.page-map {
 }
 .pop-gpx:hover { opacity: 0.88; }
 
-/* ── Loader ──────────────────────────────── */
+/*Loader  */
 .loader {
   display: none;
   position: fixed;
@@ -257,14 +263,14 @@ body.page-map {
   text-align: center;
   box-shadow: 0 8px 24px rgba(0,0,0,0.1);
 }
-.loader-icon  { font-size: 24px; margin-bottom: 10px; }
+
 .loader-title { font-size: 15px; font-weight: 600; margin-bottom: 5px; }
 .loader-sub   { font-size: 12px; color: var(--muted); margin-bottom: 18px; min-height: 1.2em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prog-track   { background: var(--border); border-radius: 99px; height: 6px; overflow: hidden; margin-bottom: 8px; }
 .prog-bar     { height: 100%; background: var(--rouge); border-radius: 99px; width: 0%; transition: width 0.3s ease; }
 .prog-label   { font-size: 12px; color: var(--muted); }
 
-/* ── Page stats ──────────────────────────── */
+/* Page stats  */
 .year-bar {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -360,7 +366,7 @@ body.page-map {
 .fun-icon img {
   width: 100%;
   height: 100%;
-  object-fit: contain;   /* ✅ keeps proportions */
+  object-fit: contain;
 }
 
 .fun-num  { font-size: 64px; font-weight: 700; color: var(--rouge); line-height: 1.2; }
@@ -458,13 +464,13 @@ footer .logo {
 @media (max-width: 600px) {
 
   .fun-card {
-    min-height: 110px;        /* ✅ slightly smaller */
+    min-height: 110px;
     padding: 12px 14px;
     gap: 12px;
   }
 
   .fun-icon {
-    width: 70px;              /* ✅ scaled down image */
+    width: 70px;
     height: 70px;
   }
 
@@ -474,7 +480,7 @@ footer .logo {
   }
 
   .fun-num {
-    font-size: 20px;          /* ✅ smaller number */
+    font-size: 20px;
   }
 
   .fun-lbl {
@@ -486,9 +492,8 @@ footer .logo {
   }
 
 
-
   .totals-grid {
-    grid-template-columns: 1fr; /* ✅ 1 per row */
+    grid-template-columns: 1fr;
   }
 
   .stat-card {

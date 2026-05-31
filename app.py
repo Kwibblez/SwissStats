@@ -1,11 +1,10 @@
 """
-SwissStats — Application Flask
+SwissStats — Application Flask + PostGIS
 HEIG-VD 2026 — Fardel, Perroud, Smith
 """
 
 import os
 import json
-import time
 import threading
 import uuid
 
@@ -22,6 +21,7 @@ load_dotenv() # Charge les variables d'environnement depuis le fichier .env
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change_me_in_prod")
 
+
 # Identifiants Strava
 STRAVA_CLIENT_ID     = os.getenv("STRAVA_CLIENT_ID")
 STRAVA_CLIENT_SECRET = os.getenv("STRAVA_CLIENT_SECRET")
@@ -32,6 +32,7 @@ SYNC_JOBS = {}
 
 # Permet de passer d'une polyligne à liste de coordonnées (longitude et latitude)
 def _decode_polyline(polyline_str):
+    """Décode un Google Encoded Polyline en liste de [lat, lng]."""
     coords = []
     index, lat, lng = 0, 0, 0
     while index < len(polyline_str):
@@ -47,23 +48,18 @@ def _decode_polyline(polyline_str):
             value = ~(result >> 1) if result & 1 else result >> 1
             if is_lng:
                 lng += value
-                coords.append([lng / 1e5, lat / 1e5]) # conversion en degrés décimaux
+                coords.append((lng / 1e5, lat / 1e5))  # conversion en degrés décimaux
             else:
                 lat += value
     return coords
 
 
 def estimate_calories(moving_time_s, avg_heartrate):
-    """
-    Estimation des calories via FC et durée (formule ACSM).
-    Valeurs moyennes supposées : 60 kg, 25 ans.
-    Précision ~10-15%, suffisant pour stats fun.
-    """
+    """Estimation calories via FC et durée (formule ACSM, 65kg/25ans)."""
     if moving_time_s and avg_heartrate:
         mins = moving_time_s / 60.0
-        kcal = (-55.0969 + 0.6309 * avg_heartrate + 0.1988 * 60 + 0.2017 * 25) / 4.184 * mins
+        kcal = (-55.0969 + 0.6309 * avg_heartrate + 0.1988 * 65 + 0.2017 * 25) / 4.184 * mins
         return max(0, round(kcal))
-    # Fallback sans FC : ~600 kcal/heure (effort modéré)
     if moving_time_s:
         return round(moving_time_s / 3600 * 600)
     return 0
@@ -75,15 +71,14 @@ def estimate_calories(moving_time_s, avg_heartrate):
 
 @app.route("/")
 def index():
-    # affiche la carte si l'utilisateur est déjà connecté, sinon login
     if "user_id" not in session:
         return render_template("login.html")
     return redirect(url_for("map_view"))
+# affiche la carte si l'utilisateur est déjà connecté, sinon login
 
 
 @app.route("/login")
-def login():
-    # redirige l'utilisateur vers la page d'identification de strava
+def login(): # redirige l'utilisateur vers la page d'identification de strava
     auth_url = (
         f"https://www.strava.com/oauth/authorize"
         f"?client_id={STRAVA_CLIENT_ID}"
@@ -101,7 +96,6 @@ def callback():
     code = request.args.get("code")
     if not code:
         return "Erreur : pas de code reçu de Strava.", 400
-
     # avec ce code, on peut récupérer les données de l'utilisateur
     strava     = StravaAPI(STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET)
     token_data = strava.exchange_code(code, STRAVA_REDIRECT_URI)
@@ -149,13 +143,11 @@ def logout():
     return redirect(url_for("index"))
 
 
-# ═══════════════════════════════════════════════════════════════
-# SYNC STRAVA — thread background + polling
-# ═══════════════════════════════════════════════════════════════
 
-@app.route("/sync")
+# SYNC STRAVA
+
+@app.route("/sync") # synchronise avec les données de l'utilisateur, on va récupérer toutes ses activités par année
 def sync_start():
-    # synchronise avec les données de l'utilisateur, on va récupérer toutes ses activités par année
     if "user_id" not in session:
         return jsonify({"error": "non connecte"}), 401
 
@@ -168,22 +160,23 @@ def sync_start():
         "msg": "Demarrage...", "finished": False, "error": None
     }
 
-    def run():
-        # permet de synchroniser les données
-        try:
-            # on récupère les infos de l'utilisateur depuis la DB
+    def run():  # permet de synchroniser les données
+        try: # on récupère les infos de l'utilisateur depuis la DB
             with get_db_connection() as conn:
                 with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                     cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
                     user = cur.fetchone()
 
-            # initialise le client strava et rafraîchit le token si expiré
+            if not user:
+                SYNC_JOBS[job_id].update({"finished": True,
+                                          "error": "Utilisateur introuvable - reconnecte-toi"})
+                return
+
             strava = StravaAPI(STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET)
             strava.set_tokens(user["access_token"], user["refresh_token"],
                               user["token_expires_at"])
             strava.refresh_if_needed()
 
-            # récupère toutes les activités de l'année
             activities = strava.get_activities_for_year(year)
             total = len(activities)
             SYNC_JOBS[job_id].update({"total": total, "msg": f"{total} activites trouvees..."})
@@ -192,32 +185,30 @@ def sync_start():
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     for act in activities:
-                        name          = act.get("name", "Activite")
-                        track_geojson = None
-                        has_gpx       = False
+                        name     = act.get("name", "Activite")
+                        track_wkt = None
+                        has_gpx   = False
 
-                        # Estimation calories locale — 0 appel API, instantané
                         calories = estimate_calories(
                             act.get("moving_time"),
                             act.get("average_heartrate")
                         )
-                        
-                        # décodage du tracé GPS
+
+                        # Décode le polyline → pour PostGIS
                         polyline_str = (act.get("map") or {}).get("summary_polyline", "")
                         if polyline_str:
-                            has_gpx       = True
-                            coords        = _decode_polyline(polyline_str)
-                            track_geojson = json.dumps({
-                                "type": "LineString", "coordinates": coords
-                            })
+                            coords = _decode_polyline(polyline_str)
+                            if len(coords) > 1:
+                                has_gpx   = True
+                                pts       = ", ".join(f"{lng} {lat}" for lng, lat in coords)
+                                track_wkt = f"LINESTRING({pts})"
 
-                        # coordonnées de départ/ arrivée
                         start_ll = act.get("start_latlng") or [None, None]
                         end_ll   = act.get("end_latlng")   or [None, None]
+                        # coordonnées de départ/ arrivée
                         if len(start_ll) < 2: start_ll = [None, None]
                         if len(end_ll)   < 2: end_ll   = [None, None]
 
-                        # met toutes les données des activités dans la DB
                         cur.execute("""
                             INSERT INTO activities (
                                 strava_id, user_id, name, sport_type,
@@ -228,15 +219,17 @@ def sync_start():
                                 average_heartrate, max_heartrate,
                                 average_cadence, average_watts, suffer_score,
                                 start_lat, start_lng, end_lat, end_lng,
-                                track_geojson, has_gpx, manual, commute
+                                track_geom, has_gpx, manual, commute
                             ) VALUES (
                                 %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
-                                %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
+                                %s,%s,%s,%s,%s,%s,%s,%s,%s,
+                                ST_GeomFromText(%s, 4326),
+                                %s,%s,%s
                             )
                             ON CONFLICT (strava_id) DO UPDATE SET
-                                track_geojson = EXCLUDED.track_geojson,
-                                has_gpx       = EXCLUDED.has_gpx,
-                                calories      = EXCLUDED.calories
+                                track_geom = EXCLUDED.track_geom,
+                                has_gpx    = EXCLUDED.has_gpx,
+                                calories   = EXCLUDED.calories
                         """, (
                             act["id"], user_id,
                             act.get("name"), act.get("sport_type"),
@@ -251,7 +244,7 @@ def sync_start():
                             act.get("suffer_score"),
                             start_ll[0], start_ll[1],
                             end_ll[0],   end_ll[1],
-                            track_geojson, has_gpx,
+                            track_wkt, has_gpx,
                             act.get("manual", False), act.get("commute", False),
                         ))
                         saved += 1
@@ -266,8 +259,8 @@ def sync_start():
                 "msg": f"{saved} activites synchronisees !"
             })
         except Exception as e:
-            # affiche message erreur si erreur
             SYNC_JOBS[job_id].update({"finished": True, "error": str(e)})
+            # affiche message erreur si erreur
 
     threading.Thread(target=run, daemon=True).start()
     return jsonify({"job_id": job_id})
@@ -282,13 +275,9 @@ def sync_status():
     return jsonify(SYNC_JOBS[job_id])
 
 
-# ═══════════════════════════════════════════════════════════════
 # CARTE
-# ═══════════════════════════════════════════════════════════════
-
 @app.route("/map")
-def map_view():
-    # affiche la carte
+def map_view(): # affiche la carte
     if "user_id" not in session:
         return redirect(url_for("login"))
     year = request.args.get("year", 2024, type=int)
@@ -297,13 +286,11 @@ def map_view():
 
 @app.route("/api/tracks")
 def api_tracks():
-    # retourne un GeoJSON pour tout les parcours de l'utilisateur avec qq propriétés
     if "user_id" not in session:
         return jsonify({"error": "non connecte"}), 401
 
     year       = request.args.get("year", 2024, type=int)
     sport_type = request.args.get("sport")
-
     # script pour récupérer toutes les infos utiles de la DB
     query = """
         SELECT strava_id, name, sport_type, start_date_local,
@@ -311,11 +298,12 @@ def api_tracks():
             moving_time_s,
             ROUND(total_elevation_m::numeric)            AS elevation_m,
             ROUND((average_speed_ms * 3.6)::numeric, 1) AS avg_speed_kmh,
-            average_heartrate, calories, track_geojson
+            average_heartrate, calories,
+            ST_AsGeoJSON(track_geom)::json               AS geojson
         FROM activities
         WHERE user_id = %s
           AND EXTRACT(YEAR FROM start_date_local) = %s
-          AND track_geojson IS NOT NULL
+          AND track_geom IS NOT NULL
     """
     params = [session["user_id"], year]
     # tri en fonction de l'activité (si indiqué)
@@ -333,7 +321,7 @@ def api_tracks():
     for row in rows:
         features.append({
             "type": "Feature",
-            "geometry": json.loads(row["track_geojson"]),
+            "geometry": row["geojson"],
             "properties": {
                 "id":            row["strava_id"],
                 "name":          row["name"],
@@ -351,9 +339,9 @@ def api_tracks():
     return jsonify({"type": "FeatureCollection", "features": features})
 
 
-# ═══════════════════════════════════════════════════════════════
+
 # STATISTIQUES
-# ═══════════════════════════════════════════════════════════════
+
 
 @app.route("/stats")
 def stats_view():
@@ -370,7 +358,6 @@ def api_stats():
         return jsonify({"error": "non connecte"}), 401
 
     year = request.args.get("year", 2024, type=int)
-
     # récupère les infos utiles de la DB
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -386,6 +373,7 @@ def api_stats():
                 WHERE user_id = %s AND EXTRACT(YEAR FROM start_date_local) = %s
             """, (session["user_id"], year))
             totals = dict(cur.fetchone())
+
 
             # récupère les totaux par type de sport
             cur.execute("""
@@ -409,8 +397,8 @@ def api_stats():
             """, (session["user_id"], year))
             by_month = [dict(r) for r in cur.fetchall()]
 
-    total_km = totals["total_m"] / 1000.0
     # calcul des différentes statistiques fun
+    total_km = totals["total_m"] / 1000.0
     fun = {
         "vaches":     round(totals["total_m"] / 2.4),
         "lac_leman":  round(total_km / 170, 1),
@@ -424,9 +412,7 @@ def api_stats():
                     "by_sport": by_sport, "by_month": by_month, "fun": fun})
 
 
-# ═══════════════════════════════════════════════════════════════
 # EXPORT GPX
-# ═══════════════════════════════════════════════════════════════
 
 @app.route("/api/gpx/<int:strava_id>")
 def export_gpx(strava_id):
@@ -438,24 +424,31 @@ def export_gpx(strava_id):
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             # vérifie que l'activité appartient bien à l'utilisateur connecté (par sécurité)
             cur.execute("""
-                SELECT name, start_date_local, sport_type, track_geojson
+                SELECT name, start_date_local, sport_type,
+                       ST_AsGeoJSON(track_geom)::json AS geojson
                 FROM activities WHERE strava_id = %s AND user_id = %s
             """, (strava_id, session["user_id"]))
             act = cur.fetchone()
 
-    if not act or not act["track_geojson"]:
+    if not act or not act["geojson"]:
         return "Activite introuvable", 404
 
-    coords = json.loads(act["track_geojson"])["coordinates"]
-    # Inversion lng/lat -> lat/lon
-    trkpts = "\n".join(f'<trkpt lat="{lat}" lon="{lng}"></trkpt>' for lng, lat in coords)
+    coords = act["geojson"]["coordinates"]   # Inversion lng/lat -> lat/lon
+    trkpts = "\n".join(
+        f'      <trkpt lat="{lat}" lon="{lng}"></trkpt>'
+        for lng, lat in coords
+    )
 
     gpx = f"""<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="SwissStats">
-  <trk><name>{act['name']}</name><type>{act['sport_type'] or 'other'}</type>
-  <trkseg>{trkpts}</trkseg></trk>
+  <trk>
+    <name>{act['name']}</name>
+    <type>{act['sport_type'] or 'other'}</type>
+    <trkseg>
+{trkpts}
+    </trkseg>
+  </trk>
 </gpx>"""
-
     # retourne le GPX en tant que fichier téléchargeable
     return Response(gpx, mimetype="application/gpx+xml",
                     headers={"Content-Disposition": f"attachment; filename=strava_{strava_id}.gpx"})

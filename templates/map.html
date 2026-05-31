@@ -3,13 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Carte {{ year }} — SwissStats </title>
+  <title>Carte {{ year }} — SwissStats</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-measure@3.1.0/dist/leaflet-measure.css"/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body class="page-map">
+
+
 
 <nav>
   <a href="/" class="logo">Swiss<span>Stats</span></a>
@@ -26,7 +29,7 @@
   <label>Sport</label>
   <select id="sportFilter">
     <option value="">Tous</option>
-    <option value="Run">Course</option>
+    <option value="Run">Course à pied</option>
     <option value="TrailRun">Trail</option>
     <option value="Ride">Vélo</option>
     <option value="Hike">Randonnée</option>
@@ -34,7 +37,12 @@
     <option value="Walk">Marche</option>
     <option value="AlpineSki">Ski alpin</option>
     <option value="NordicSki">Ski nordique</option>
-
+  </select>
+  <label>Fond de carte</label>
+  <select id="basemapSelect" onchange="switchBasemap()">
+    <option value="carto">CartoDB</option>
+    <option value="swisstopo">Swisstopo</option>
+    <option value="swisstopoGray">Swisstopo (gris)</option>
   </select>
   <button class="btn btn-orange" onclick="loadTracks()">Charger</button>
   <button class="btn" onclick="syncActivities()">Sync Strava</button>
@@ -51,7 +59,6 @@
 
 <div class="loader" id="loader">
   <div class="loader-box">
-    <div class="loader-icon" id="loaderIcon">⚡</div>
     <div class="loader-title" id="loaderTitle">Chargement…</div>
     <div class="loader-sub" id="loaderSub"></div>
     <div class="prog-track" id="progTrack" style="display:none">
@@ -62,6 +69,7 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-measure@3.1.0/dist/leaflet-measure.min.js"></script>
 <script src="{{ url_for('static', filename='js/map.js') }}"></script>
 
 <footer>
@@ -72,5 +80,4 @@
 
 </footer>
 </body>
-
 </html>
