@@ -61,7 +61,7 @@ requests>=2.31
 
 3. Notez votre **Client ID** et **Client Secret**
 
-<img src="main/static/figures/imgs/strava\_api\_settings.jpeg" alt="description" width="500">
+<img src="main/static/figures/imgs/strava_api_settings.jpeg" alt="description" width="500">
 
 
  L'URL de callback doit correspondre exactement à `STRAVA\_REDIRECT\_URI` dans votre `.env`.
