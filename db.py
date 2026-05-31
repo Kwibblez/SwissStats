@@ -9,17 +9,21 @@ from contextlib import contextmanager
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv() # Charge les variables d'environnement depuis le fichier .env
 
 def _config():
+    # construit le dictionnaire de configuration postgreSQL
     url = os.getenv("DATABASE_URL", "")
     if url:
+        # railway fournit le préfixe "postgres://" et on veut "postgresql://"
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
-        r = urlparse(url)
+            
+        r = urlparse(url) # Décompose l'URL en ses composants (host, port, user…)
         return dict(dbname=r.path[1:], user=r.username,
                     password=r.password, host=r.hostname,
                     port=r.port or 5432)
+    # si pas d'url : regarde info sur .env
     return dict(
         dbname   = os.getenv("POSTGRES_DB",       "stravaGeoInfo"),
         user     = os.getenv("POSTGRES_USER",     "postgres"),
@@ -30,6 +34,7 @@ def _config():
 
 @contextmanager
 def get_db_connection():
+    # connecte la DB et la ferme à la fin
     conn = psycopg2.connect(**_config())
     try:
         yield conn
@@ -37,6 +42,7 @@ def get_db_connection():
         conn.close()
 
 def init_db():
+    # initialise la DB avec le fichier schema.sql
     path = os.path.join(os.path.dirname(__file__), "schema.sql")
     with open(path, "r", encoding="utf-8") as f:
         sql = f.read()
