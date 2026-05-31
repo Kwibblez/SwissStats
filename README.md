@@ -61,7 +61,7 @@ requests>=2.31
 
 3. Notez votre **Client ID** et **Client Secret**
 
-!\[Paramètres Strava API](static/figures/imgs/strava\_api\_settings.jpeg)
+!\[Paramètres Strava API](/static/figures/imgs/strava\_api\_settings.jpeg)
 
  L'URL de callback doit correspondre exactement à `STRAVA\_REDIRECT\_URI` dans votre `.env`.
 
@@ -91,11 +91,11 @@ La base contient deux tables principales :
 
 **Table `users`** — stocke les tokens OAuth Strava de chaque utilisateur.
 
-!\[Table users](static/figures/imgs/table\_users.jpeg)
+!\[Table users](/static/figures/imgs/table\_users.jpeg)
 
 **Table `activities`** — stocke toutes les activités avec leur géométrie PostGIS.
 
-!\[Table activities](static/figures/imgs/table\_activities.jpeg)
+!\[Table activities](/static/figures/imgs/table\_activities.jpeg)
 
 La géométrie des tracés GPS est stockée dans la colonne `track\_geom` de type `GEOMETRY(LINESTRING, 4326)`, indexée avec un index GIST pour les requêtes spatiales.
 
