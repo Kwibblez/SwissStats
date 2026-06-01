@@ -104,30 +104,10 @@ La géométrie des tracés GPS est stockée dans la colonne `track\_geom` de typ
 
 ## 5\. Variables d'environnement
 
-```bash
+```
+copier le .env.example et le renommer ".env", puis remplir avec vos données pour le API Strava et PostGres
 cp .env.example .env
 ```
-
-Contenu du `.env` :
-
-```env
-# ── Strava API ──────────────────────────────────────────────
-STRAVA\_CLIENT\_ID=votre\_client\_id
-STRAVA\_CLIENT\_SECRET=votre\_client\_secret
-STRAVA\_REDIRECT\_URI=http://localhost:5000/callback
-
-# ── Flask ────────────────────────────────────────────────────
-FLASK\_SECRET\_KEY=une\_cle\_secrete\_longue\_et\_aleatoire
-
-# ── PostgreSQL ───────────────────────────────────────────────
-POSTGRES\_DB=stravaGeoInfo
-POSTGRES\_USER=postgres
-POSTGRES\_PASSWORD=votre\_mot\_de\_passe
-POSTGRES\_HOST=localhost
-POSTGRES\_PORT=5432
-```
-
-
 
 \---
 
