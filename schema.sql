@@ -86,9 +86,9 @@ JOIN users u ON a.user_id = u.id
 WHERE a.start_date_local IS NOT NULL
 GROUP BY u.strava_id, EXTRACT(YEAR FROM a.start_date_local), a.sport_type;
 
--- ============================================================
+
 -- VUE : résumé mensuel
--- ============================================================
+
 CREATE OR REPLACE VIEW monthly_stats AS
 SELECT
     a.user_id,
