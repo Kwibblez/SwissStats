@@ -173,8 +173,7 @@ async function syncActivities() {
   }, 1000);
 }
 
-function showLoader(msg, icon = ' ') {
-  document.getElementById('loaderIcon').textContent  = icon;
+function showLoader(msg) {
   document.getElementById('loaderSub').textContent   = msg;
   document.getElementById('progTrack').style.display = 'none';
   document.getElementById('progBar').style.width     = '0%';
