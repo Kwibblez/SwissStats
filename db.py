@@ -51,3 +51,4 @@ def init_db():
             cur.execute(sql)
         conn.commit()
     print("Base de données initialisée.")
+
