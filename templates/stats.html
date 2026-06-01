@@ -3,40 +3,74 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!--
+    {{ year }} est une variable Jinja2 injectée par Flask (route /stats).
+    Elle permet de personnaliser le titre de l'onglet selon l'année affichée.
+  -->
   <title>Statistiques {{ year }} — SwissStats</title>
+
+  <!-- Police Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Feuille de style principale -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+  <!--
+    Chart.js — bibliothèque de graphiques.
+    Utilisée pour le graphique à barres (distance/mois) et le donut (répartition sport).
+    Chargé dans <head> car stats.js l'utilise dès le chargement de la page.
+  -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
+<!-- ── Navigation ──────────────────────────────────────────────
+     Barre de navigation commune à toutes les pages.
+     {{ year }} est passé dans les liens pour conserver l'année active
+     lors de la navigation entre Carte et Statistiques.
+     La classe "active" indique la page courante (surlignage CSS).
+-->
 <nav>
   <a href="/" class="logo">Swiss<span>Stats</span></a>
   <a href="/map?year={{ year }}">Carte</a>
   <a href="/stats?year={{ year }}" class="active">Statistiques</a>
   <div class="spacer"></div>
+  <!-- {{ firstname }} est stocké en session Flask après connexion Strava -->
   <span class="nav-badge">{{ firstname }}</span>
   <button class="nav-btn" onclick="window.location='/logout'">Déconnexion</button>
 </nav>
 
+<!-- ── Sélecteur d'année ────────────────────────────────────────
+     Les boutons ◀ ▶ appellent changeYear(±1) dans stats.js,
+     qui met à jour la valeur et recharge les données via /api/stats.
+-->
 <div class="year-bar">
   <button class="btn" onclick="changeYear(-1)">◀</button>
   <input type="number" id="yearInput" value="{{ year }}" min="2010" max="2030">
   <button class="btn" onclick="changeYear(+1)">▶</button>
 </div>
 
+<!-- ── Contenu dynamique ────────────────────────────────────────
+     Ce div est entièrement rempli par stats.js via innerHTML.
+     Il contient : totaux, fun facts, graphiques, tableau par sport.
+     "Chargement…" est remplacé dès que l'API répond.
+-->
 <div class="content" id="content">
   <div class="empty">Chargement…</div>
 </div>
 
+<!-- stats.js chargé après le DOM pour accéder aux éléments HTML -->
 <script src="{{ url_for('static', filename='js/stats.js') }}"></script>
-<footer>
-    <a href="https://heig-vd.ch/">
-      <img src="static/figures/HEIG-VD.png" alt="HEIG logo" class ="logo">
-    </a>
-    <p class="login-footer">HEIG-VD 2026 — Fardel, Perroud, Smith</p>
 
+<!-- Pied de page HEIG-VD -->
+<footer>
+  <a href="https://heig-vd.ch/">
+    <img src="static/figures/HEIG-VD.png" alt="Logo HEIG-VD" class="logo">
+  </a>
+  <p class="login-footer">HEIG-VD 2026 — Fardel, Perroud, Smith</p>
 </footer>
+
 </body>
 </html>

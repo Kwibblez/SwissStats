@@ -4,16 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Carte {{ year }} — SwissStats</title>
+
+  <!-- Leaflet CSS — styles de la carte et des popups -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <!-- Leaflet-measure CSS — styles du bouton et de l'outil de mesure -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-measure@3.1.0/dist/leaflet-measure.css"/>
+
+  <!-- Police Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Feuille de style principale -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
+
+<!--
+  La classe "page-map" active un layout flexbox pleine hauteur (100vh)
+  défini dans main.css, nécessaire pour que la carte occupe tout l'espace disponible.
+-->
 <body class="page-map">
 
-
-
+<!-- ── Navigation ──────────────────────────────────────────────
+     {{ year }} conserve l'année active lors de la navigation.
+     La classe "active" surligne l'onglet courant.
+-->
 <nav>
   <a href="/" class="logo">Swiss<span>Stats</span></a>
   <a href="/map?year={{ year }}" class="active">Carte</a>
@@ -23,9 +38,17 @@
   <button class="nav-btn" onclick="window.location='/logout'">Déconnexion</button>
 </nav>
 
+<!-- ── Barre d'outils ──────────────────────────────────────────
+     Filtres pour l'année, le sport, le fond de carte,
+     et boutons d'action (charger, synchroniser).
+-->
 <div class="toolbar">
+
+  <!-- Filtre par année : recharge les tracés de l'année saisie -->
   <label>Année</label>
   <input type="number" id="yearInput" value="{{ year }}" min="2010" max="2030" style="width:72px">
+
+  <!-- Filtre par sport : filtre les tracés côté serveur (/api/tracks?sport=...) -->
   <label>Sport</label>
   <select id="sportFilter">
     <option value="">Tous</option>
@@ -38,46 +61,86 @@
     <option value="AlpineSki">Ski alpin</option>
     <option value="NordicSki">Ski nordique</option>
   </select>
+
+  <!--
+    Sélecteur de fond de carte.
+    Déclenche switchBasemap() dans map.js qui remplace la couche active.
+    Trois options : CartoDB (raster), Swisstopo couleur (WMS), Swisstopo gris (WMS).
+  -->
   <label>Fond de carte</label>
   <select id="basemapSelect" onchange="switchBasemap()">
     <option value="carto">CartoDB</option>
     <option value="swisstopo">Swisstopo</option>
     <option value="swisstopoGray">Swisstopo (gris)</option>
   </select>
+
+  <!-- Bouton Charger : appelle loadTracks() dans map.js -->
   <button class="btn btn-orange" onclick="loadTracks()">Charger</button>
+
+  <!-- Bouton Sync : appelle syncActivities() → thread Flask → polling -->
   <button class="btn" onclick="syncActivities()">Sync Strava</button>
+
+  <!-- Compteur de parcours affichés, mis à jour par loadTracks() -->
   <span class="count-badge" id="countBadge"><b>0</b> parcours</span>
 </div>
 
+<!-- ── Layout principal ─────────────────────────────────────────
+     Flex row : carte à gauche (flex:1), sidebar à droite (largeur fixe).
+-->
 <div class="main">
+
+  <!-- Conteneur de la carte Leaflet, rempli par L.map('map') dans map.js -->
   <div id="map"></div>
+
+  <!-- Sidebar : liste scrollable des activités de l'année -->
   <div class="sidebar">
     <div class="sidebar-header">Activités</div>
+    <!-- Rempli dynamiquement par loadTracks() dans map.js -->
     <div id="activityList"></div>
   </div>
+
 </div>
 
+<!-- ── Overlay de chargement / progression ─────────────────────
+     Affiché pendant le chargement des tracés et la synchronisation.
+     La barre de progression (#progTrack) n'est visible que pendant la sync.
+     Contrôlé par showLoader() / hideLoader() dans map.js.
+-->
 <div class="loader" id="loader">
   <div class="loader-box">
     <div class="loader-title" id="loaderTitle">Chargement…</div>
+    <!-- Message de statut mis à jour pendant la sync (ex: nom de l'activité) -->
     <div class="loader-sub" id="loaderSub"></div>
+    <!-- Barre de progression (cachée par défaut, visible pendant la sync) -->
     <div class="prog-track" id="progTrack" style="display:none">
       <div class="prog-bar" id="progBar"></div>
     </div>
+    <!-- Texte "X / Y activités" affiché sous la barre -->
     <div class="prog-label" id="progLabel"></div>
   </div>
 </div>
 
+<!-- ── Scripts ─────────────────────────────────────────────────
+     Chargés après le DOM (en bas de body) pour garantir que
+     les éléments HTML sont disponibles avant l'exécution du JS.
+-->
+
+<!-- Leaflet JS — bibliothèque de carte interactive -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Leaflet-measure — plugin de mesure de distances et surfaces -->
 <script src="https://cdn.jsdelivr.net/npm/leaflet-measure@3.1.0/dist/leaflet-measure.min.js"></script>
+
+<!-- Logique applicative de la carte -->
 <script src="{{ url_for('static', filename='js/map.js') }}"></script>
 
+<!-- Pied de page HEIG-VD -->
 <footer>
-    <a href="https://heig-vd.ch/">
-      <img src="static/figures/HEIG-VD.png" alt="HEIG logo" class ="logo">
-    </a>
-    <p class="login-footer">HEIG-VD 2026 — Fardel, Perroud, Smith</p>
-
+  <a href="https://heig-vd.ch/">
+    <img src="static/figures/HEIG-VD.png" alt="Logo HEIG-VD" class="logo">
+  </a>
+  <p class="login-footer">HEIG-VD 2026 — Fardel, Perroud, Smith</p>
 </footer>
+
 </body>
 </html>

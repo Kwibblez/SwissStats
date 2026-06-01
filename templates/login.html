@@ -4,39 +4,66 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SwissStats</title>
+
+  <!-- Police Inter (Google Fonts) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Feuille de style principale -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
+
+  <!-- Carte de connexion centrée sur la page -->
   <div class="login-page">
     <div class="login-card">
-      <div class="login-hero"><img src="static/figures/icones/cervin_rond.ico"></div>
+
+      <!-- Logo / icône de l'application -->
+      <div class="login-hero">
+        <img src="static/figures/icones/cervin_rond.ico" alt="Logo SwissStats">
+      </div>
+
+      <!-- Titre : "Swiss" en noir, "Stats" en orange (via <span>) -->
       <h1 class="login-title">Swiss<span>Stats</span></h1>
-      <p class="login-sub">Visualisez vos activités Strava et découvrez combien de vaches vous avez parcourues cette année !</p>
+
+      <!-- Accroche de présentation -->
+      <p class="login-sub">
+        Visualisez vos activités Strava et découvrez combien de vaches vous avez parcourues cette année !
+      </p>
+
+      <!-- Liste des fonctionnalités principales -->
       <div class="features">
-        <div class="feat">Tous vos parcours sur une carte.
+        <div class="feat">
+          Tous vos parcours sur une carte.
           Stats Suisses : vaches, fondue, lac Léman…
-          Export GPX de chaque activité. Graphiques mensuels et par sport !
+          Export GPX de chaque activité.
+          Graphiques mensuels et par sport !
         </div>
       </div>
 
+      <!--
+        Bouton de connexion OAuth Strava.
+        Redirige vers /login → Flask construit l'URL d'autorisation Strava
+        → L'utilisateur autorise l'app → Strava redirige vers /callback
+      -->
       <a href="/login" class="strava-btn">
+        <!-- Logo Strava SVG (inline pour éviter une requête réseau) -->
         <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
           <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
         </svg>
         Connecter mon compte Strava
       </a>
 
-
     </div>
   </div>
-  <footer>
-      <a href="https://heig-vd.ch/">
-        <img src="static/figures/HEIG-VD.png" alt="HEIG logo" class ="logo">
-      </a>
-      <p class="login-footer">HEIG-VD 2026 — Fardel, Perroud, Smith</p>
 
+  <!-- Pied de page avec logo HEIG-VD et crédits -->
+  <footer>
+    <a href="https://heig-vd.ch/">
+      <img src="static/figures/HEIG-VD.png" alt="Logo HEIG-VD" class="logo">
+    </a>
+    <p class="login-footer">HEIG-VD 2026 — Fardel, Perroud, Smith</p>
   </footer>
+
 </body>
 </html>
