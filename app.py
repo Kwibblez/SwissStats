@@ -178,6 +178,16 @@ def sync_start():
             strava.set_tokens(user["access_token"], user["refresh_token"],
                               user["token_expires_at"])
             strava.refresh_if_needed()
+            new_tokens = strava.refresh_if_needed()
+            if new_tokens:
+                with get_db_connection() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                            UPDATE users SET access_token=%s, refresh_token=%s,
+                            token_expires_at=%s WHERE id=%s
+                        """, (new_tokens["access_token"], new_tokens["refresh_token"],
+                              new_tokens["expires_at"], user_id))
+                        conn.commit()
 
             activities = strava.get_activities_for_year(year)
             total = len(activities)
