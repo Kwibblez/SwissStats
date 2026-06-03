@@ -63,7 +63,7 @@ requests>=2.31
 
 <img src="/static/figures/imgs/strava_api_settings.jpeg" alt="strava api settings" width="500">
 
-Variables d'environnement
+## Variables d'environnement
 
 copier le .env.example et le renommer ".env", puis remplir avec vos données pour le API Strava et PostGres
 cp .env.example .env
