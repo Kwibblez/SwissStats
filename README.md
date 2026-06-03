@@ -59,9 +59,32 @@ requests>=2.31
 |Site web|`http://localhost:5000/callback`|
 |Domaine du rappel|`localhost`|
 
-3. Notez votre **Client ID** et **Client Secret**
+3. Notez votre **Client ID** et **Client Secret** et creer l'environnement 
 
 <img src="/static/figures/imgs/strava_api_settings.jpeg" alt="strava api settings" width="500">
+
+Variables d'environnement
+
+copier le .env.example et le renommer ".env", puis remplir avec vos données pour le API Strava et PostGres
+cp .env.example .env
+```
+# ── Strava API ──────────────────────────────────────────────
+# Créer une app sur https://www.strava.com/settings/api
+STRAVA_CLIENT_ID=VOTRE_CLIENT_ID
+STRAVA_CLIENT_SECRET=VOTRE_CLIENT_SECRET
+STRAVA_REDIRECT_URI=http://localhost:5000/callback
+
+# ── Flask ────────────────────────────────────────────────────
+FLASK_SECRET_KEY=une_cle_secrete_aleatoire_longue
+
+# ── PostgreSQL ───────────────────────────────────────────────
+POSTGRES_DB=strava_stats
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=votre_mot_de_passe
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+
+```
 
 
  L'URL de callback doit correspondre exactement à `STRAVA\_REDIRECT\_URI` dans votre `.env`.
@@ -80,7 +103,7 @@ CREATE DATABASE "stravaGeoInfo";
 CREATE EXTENSION IF NOT EXISTS postgis;
 ```
 
-### Restaurer depuis le dump
+### (Restaurer depuis le dump)
 
 Un dump complet est fourni dans le dossier `dump/` :
 
@@ -102,16 +125,10 @@ La géométrie des tracés GPS est stockée dans la colonne `track\_geom` de typ
 
 \---
 
-## 5\. Variables d'environnement
-
-```
-copier le .env.example et le renommer ".env", puis remplir avec vos données pour le API Strava et PostGres
-cp .env.example .env
-```
-
 \---
 
-## 6\. Lancer l'application
+## 5\. Lancer l'application
+*J'ai utilisé pycharm professionnal et lancé le projet là.
 
 ```bash
 python app.py
